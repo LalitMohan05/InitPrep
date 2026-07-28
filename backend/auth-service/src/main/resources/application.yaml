@@ -1,0 +1,20 @@
+server:
+    port: 8081
+
+spring:
+    application:
+        name: auth-service
+
+    datasource:
+        url: jdbc:postgresql://localhost:5432/auth_db
+        username: lalit
+        password: password
+
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+
+jwt:
+    secret: pgPBygKgBTmm6ClKjfcb12cYo5IPDTwcRvtgqbyTSJQ=
+    expiration: ${JWT_EXPIRATION:86400000}

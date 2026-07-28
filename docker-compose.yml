@@ -1,0 +1,51 @@
+
+services:
+
+    postgres:
+        image: postgres:17
+        container_name: initprep-postgres
+
+        restart: unless-stopped
+
+        environment:
+            POSTGRES_DB: auth_db
+            POSTGRES_USER: lalit
+            POSTGRES_PASSWORD: password
+
+        ports:
+            - "5432:5432"
+
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+
+        networks:
+            - initprep-network
+
+
+    pgadmin:
+        image: dpage/pgadmin4
+        container_name: initprep-pgadmin
+
+        restart: unless-stopped
+
+        environment:
+            PGADMIN_DEFAULT_EMAIL: lalit@gmail.com
+            PGADMIN_DEFAULT_PASSWORD: password
+
+        ports:
+            - "5050:80"
+
+        depends_on:
+            - postgres
+
+        networks:
+            - initprep-network
+
+
+
+volumes:
+    postgres_data:
+
+
+networks:
+    initprep-network:
