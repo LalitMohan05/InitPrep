@@ -1,0 +1,21 @@
+server:
+    port: 8082
+
+spring:
+    application:
+        name: user-service
+
+    datasource:
+        url: jdbc:postgresql://localhost:5432/user_db
+        username: lalit
+        password: password
+
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+
+jwt:
+    secret: pgPBygKgBTmm6ClKjfcb12cYo5IPDTwcRvtgqbyTSJQ=
+    expiration: ${JWT_EXPIRATION:86400000}
+

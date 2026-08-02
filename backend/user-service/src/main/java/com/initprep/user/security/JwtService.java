@@ -1,13 +1,18 @@
-package com.initprep.auth.security;
+package com.initprep.user.security;
 
-import com.initprep.auth.entity.User;
+import io.jsonwebtoken.Claims;
 
 import java.util.UUID;
 
 public interface JwtService {
-    String generateToken(User user);
-    boolean isTokenValid(String token, User user);
+
+    Claims extractClaims(String token);
+
     String extractUsername(String token);
+
     UUID extractUserId(String token);
+
     String extractRole(String token);
+
+    boolean isTokenValid(String token);
 }
