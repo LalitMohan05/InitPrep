@@ -9,7 +9,7 @@ services:
 
         environment:
             POSTGRES_DB: auth_db
-            POSTGRES_USER: lalit
+            POSTGRES_USER: lalitdo
             POSTGRES_PASSWORD: password
 
         ports:
