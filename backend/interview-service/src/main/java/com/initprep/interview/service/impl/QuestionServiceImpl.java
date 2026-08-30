@@ -12,6 +12,7 @@ import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
 import com.initprep.interview.exception.ResourceNotFoundException;
 import com.initprep.interview.mapper.QuestionMapper;
+import com.initprep.interview.mapper.TestCaseMapper;
 import com.initprep.interview.repository.CompanyRepo;
 import com.initprep.interview.repository.QuestionRepo;
 import com.initprep.interview.repository.TopicRepo;
@@ -37,6 +38,7 @@ public class QuestionServiceImpl implements QuestionService {
     private final CompanyRepo companyRepository;
     private final TopicRepo topicRepository;
     private final QuestionMapper questionMapper;
+    private final TestCaseMapper testCaseMapper;
 
     @Override
     public QuestionResponse createQuestion(CreateQuestionRequest request) {
@@ -47,12 +49,14 @@ public class QuestionServiceImpl implements QuestionService {
 
             List<TestCase> testCases = request.getTestCases()
                 .stream()
-                .map(testCaseRequest -> TestCase.builder()
-                    .input(testCaseRequest.getInput())
-                    .expectedOutput(testCaseRequest.getExpectedOutput())
-                    .hidden(testCaseRequest.isHidden())
-                    .question(question)
-                    .build())
+                .map(testCaseRequest -> {
+                    TestCase testCase =
+                        testCaseMapper.toEntity(testCaseRequest);
+
+                    testCase.setQuestion(question);
+
+                    return testCase;
+                })
                 .toList();
 
             question.setTestCases(testCases);
@@ -93,7 +97,6 @@ public class QuestionServiceImpl implements QuestionService {
             .orElseThrow(()->new ResourceNotFoundException("Question not found " + questionId));
 
         questionMapper.updateEntity(request,question);
-
 
         if (request.getCompanyIds() != null) {
 

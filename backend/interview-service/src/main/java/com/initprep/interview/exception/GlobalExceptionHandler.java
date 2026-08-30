@@ -28,4 +28,22 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.NOT_FOUND)
             .body(response);
     }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateResourceException(
+        DuplicateResourceException ex,
+        HttpServletRequest request) {
+
+        ErrorResponse response = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.CONFLICT.value())
+            .error("Already exists")
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .build();
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(response);
+    }
 }

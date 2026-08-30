@@ -40,11 +40,27 @@ public class SecurityConfig {
                     "/api/questions/**"
                 )
                 .hasRole("ADMIN")
-                    .requestMatchers(
-                        HttpMethod.DELETE,
-                        "/api/questions/**"
-                    )
-                    .hasRole("ADMIN")
+                .requestMatchers(
+                    HttpMethod.DELETE,
+                    "/api/questions/**"
+                )
+                .hasRole("ADMIN")
+                .requestMatchers(
+                    HttpMethod.GET,
+                    "/api/questions/*/test-cases"
+                ).hasRole("ADMIN")
+                .requestMatchers(
+                    HttpMethod.POST,
+                    "/api/questions/*/test-cases"
+                ).hasRole("ADMIN")
+                .requestMatchers(
+                    HttpMethod.DELETE,
+                    "/api/questions/*/test-cases/*"
+                ).hasRole("ADMIN")
+                .requestMatchers(
+                    HttpMethod.PATCH,
+                    "/api/questions/*/test-cases/*"
+                ).hasRole("ADMIN")
 
                 .anyRequest().authenticated()
                 )
