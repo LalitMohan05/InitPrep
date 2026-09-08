@@ -17,3 +17,7 @@ spring:
 jwt:
     secret: pgPBygKgBTmm6ClKjfcb12cYo5IPDTwcRvtgqbyTSJQ=
     expiration: ${JWT_EXPIRATION:86400000}
+
+services:
+    interview:
+        url: http://localhost:8083

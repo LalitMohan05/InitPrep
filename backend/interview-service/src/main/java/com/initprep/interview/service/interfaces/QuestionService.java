@@ -21,4 +21,6 @@ public interface QuestionService {
 
     Page<QuestionSummaryResponse> getQuestions(Difficulty difficulty , QuestionType type,String companyName,
                                                String topicName, Pageable pageable);
+
+    boolean questionExists(UUID questionId);
 }

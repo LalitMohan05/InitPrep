@@ -1,5 +1,6 @@
 package com.initprep.attempt.service.implementation;
 
+import com.initprep.attempt.client.InterviewServiceClient;
 import com.initprep.attempt.dto.AttemptResponse;
 import com.initprep.attempt.dto.CreateAttemptRequest;
 import com.initprep.attempt.entity.Attempt;
@@ -22,11 +23,18 @@ import java.util.UUID;
 public class AttemptServiceImpl implements AttemptService {
 
     private final AttemptRepo attemptRepository;
+    private final InterviewServiceClient interviewServiceClient;
 
     @Override
     public AttemptResponse createAttempt(
         UUID userId,
         CreateAttemptRequest request) {
+
+        if (!interviewServiceClient.questionExists(request.getQuestionId())) {
+            throw new ResourceNotFoundException(
+                "Question not found: " + request.getQuestionId()
+            );
+        }
 
         Attempt attempt = Attempt.builder()
             .userId(userId)

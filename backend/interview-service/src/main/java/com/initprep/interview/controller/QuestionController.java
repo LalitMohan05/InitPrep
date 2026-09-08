@@ -59,5 +59,14 @@ public class QuestionController {
         Pageable pageable) {
         return ResponseEntity.ok(questionService.getQuestions(difficulty,type,company,topic,pageable));
     }
+
+    @GetMapping("/{questionId}/exists")
+    public ResponseEntity<Boolean> questionExists(
+        @PathVariable UUID questionId
+    ) {
+        return ResponseEntity.ok(
+            questionService.questionExists(questionId)
+        );
+    }
 }
 

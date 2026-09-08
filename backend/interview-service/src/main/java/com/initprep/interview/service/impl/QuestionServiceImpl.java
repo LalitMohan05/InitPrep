@@ -176,4 +176,10 @@ public class QuestionServiceImpl implements QuestionService {
         return questions.map(questionMapper::toSummaryResponse);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean questionExists(UUID questionId) {
+        return questionRepository.existsById(questionId);
+    }
+
 }

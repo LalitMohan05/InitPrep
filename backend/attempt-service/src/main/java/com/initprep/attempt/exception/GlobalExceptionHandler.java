@@ -41,4 +41,20 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.FORBIDDEN)
             .body(error);
     }
+
+    @ExceptionHandler(InterviewServiceException.class)
+    public ResponseEntity<ErrorResponse> handleInterviewServiceException(
+        InterviewServiceException ex
+    ) {
+
+        ErrorResponse error = ErrorResponse.builder()
+            .status(HttpStatus.SERVICE_UNAVAILABLE.value())
+            .message(ex.getMessage())
+            .timestamp(LocalDateTime.now())
+            .build();
+
+        return ResponseEntity
+            .status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(error);
+    }
 }
