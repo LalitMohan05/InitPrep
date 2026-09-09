@@ -11,6 +11,7 @@
         <option value="$PROJECT_DIR$/backend/interview-service/pom.xml" />
         <option value="$PROJECT_DIR$/backend/attempt-service /pom.xml" />
         <option value="$PROJECT_DIR$/backend/attempt-service/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/judege-service/pom.xml" />
       </list>
     </option>
   </component>

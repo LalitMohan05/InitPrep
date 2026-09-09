@@ -1,3 +1,9 @@
 spring:
   application:
-    name: judege-service
+    name: judge-service
+
+server:
+    port: 8085
+
+judge0:
+    url: https://ce.judge0.com

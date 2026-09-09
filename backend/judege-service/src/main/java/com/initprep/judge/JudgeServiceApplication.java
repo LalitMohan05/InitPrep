@@ -1,13 +1,13 @@
-package com.initprep.judege;
+package com.initprep.judge;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class JudegeServiceApplication {
+public class JudgeServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(JudegeServiceApplication.class, args);
+		SpringApplication.run(JudgeServiceApplication.class, args);
 	}
 
 }

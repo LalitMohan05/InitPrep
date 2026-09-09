@@ -1,4 +1,4 @@
-package com.initprep.judege;
+package com.initprep.judge;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
