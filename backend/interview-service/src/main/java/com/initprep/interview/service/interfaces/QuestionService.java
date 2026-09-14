@@ -1,9 +1,6 @@
 package com.initprep.interview.service.interfaces;
 
-import com.initprep.interview.dto.CreateQuestionRequest;
-import com.initprep.interview.dto.QuestionResponse;
-import com.initprep.interview.dto.QuestionSummaryResponse;
-import com.initprep.interview.dto.UpdateQuestionRequest;
+import com.initprep.interview.dto.*;
 import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
 import org.springframework.data.domain.Page;
@@ -23,4 +20,5 @@ public interface QuestionService {
                                                String topicName, Pageable pageable);
 
     boolean questionExists(UUID questionId);
+    QuestionJudgeResponse getJudgeData(UUID questionId);
 }

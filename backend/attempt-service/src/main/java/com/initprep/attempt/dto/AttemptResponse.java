@@ -17,16 +17,17 @@ public class AttemptResponse {
     private UUID id;
 
     private UUID questionId;
-
     private String language;
 
     private AttemptStatus status;
 
     private AttemptResult result;
-
     private Double score;
 
     private String feedback;
+    private String compilerOutput;
+    private String runtimeOutput;
+    private TestCaseResult failedTestCase;
 
     private LocalDateTime createdAt;
 

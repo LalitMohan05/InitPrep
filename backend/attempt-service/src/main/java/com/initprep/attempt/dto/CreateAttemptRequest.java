@@ -1,5 +1,6 @@
 package com.initprep.attempt.dto;
 
+import com.initprep.attempt.enums.AttemptType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -20,4 +21,6 @@ public class CreateAttemptRequest {
     private String answer;
 
     private String language;
+    @NotNull
+    private AttemptType type;
 }

@@ -1,9 +1,6 @@
 package com.initprep.interview.controller;
 
-import com.initprep.interview.dto.CreateQuestionRequest;
-import com.initprep.interview.dto.QuestionResponse;
-import com.initprep.interview.dto.QuestionSummaryResponse;
-import com.initprep.interview.dto.UpdateQuestionRequest;
+import com.initprep.interview.dto.*;
 import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
 import com.initprep.interview.service.interfaces.QuestionService;
@@ -66,6 +63,15 @@ public class QuestionController {
     ) {
         return ResponseEntity.ok(
             questionService.questionExists(questionId)
+        );
+    }
+
+    @GetMapping("/{questionId}/judge-data")
+    public ResponseEntity<QuestionJudgeResponse> getJudgeData(
+        @PathVariable UUID questionId
+    ) {
+        return ResponseEntity.ok(
+            questionService.getJudgeData(questionId)
         );
     }
 }

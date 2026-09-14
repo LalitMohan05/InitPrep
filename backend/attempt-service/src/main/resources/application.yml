@@ -21,3 +21,6 @@ jwt:
 services:
     interview:
         url: http://localhost:8083
+
+    judge:
+        url: http://localhost:8085

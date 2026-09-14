@@ -1,6 +1,5 @@
-package com.initprep.judge.dto;
+package com.initprep.attempt.dto;
 
-import com.initprep.judge.enums.JudgeStatus;
 import lombok.*;
 
 import java.util.List;
@@ -12,14 +11,13 @@ import java.util.List;
 @Builder
 public class JudgeSubmissionResponse {
 
-    private JudgeStatus status;
+    private String status;
 
     private Integer passedTestCases;
 
     private Integer totalTestCases;
 
     private Long executionTime;
-
     private Long memoryUsed;
 
     private String compilerOutput;
@@ -27,4 +25,5 @@ public class JudgeSubmissionResponse {
     private String runtimeOutput;
 
     private List<TestCaseResult> testCaseResults;
+    private TestCaseResult failedTestCase;
 }

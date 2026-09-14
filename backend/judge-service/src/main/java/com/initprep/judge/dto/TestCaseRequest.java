@@ -10,9 +10,13 @@ import lombok.*;
 @Builder
 public class TestCaseRequest {
 
+    private boolean passed;
+
     @NotBlank
     private String input;
 
     @NotBlank
     private String expectedOutput;
+    private String actualOutput;
+    private boolean hidden;
 }

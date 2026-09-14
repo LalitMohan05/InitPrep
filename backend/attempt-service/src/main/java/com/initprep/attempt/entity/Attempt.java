@@ -2,6 +2,7 @@ package com.initprep.attempt.entity;
 
 import com.initprep.attempt.enums.AttemptResult;
 import com.initprep.attempt.enums.AttemptStatus;
+import com.initprep.attempt.enums.AttemptType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -60,4 +61,8 @@ public class Attempt {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AttemptType type;
 }

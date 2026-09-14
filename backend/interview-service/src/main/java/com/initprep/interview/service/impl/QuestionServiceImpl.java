@@ -1,9 +1,6 @@
 package com.initprep.interview.service.impl;
 
-import com.initprep.interview.dto.CreateQuestionRequest;
-import com.initprep.interview.dto.QuestionResponse;
-import com.initprep.interview.dto.QuestionSummaryResponse;
-import com.initprep.interview.dto.UpdateQuestionRequest;
+import com.initprep.interview.dto.*;
 import com.initprep.interview.entity.Company;
 import com.initprep.interview.entity.Question;
 import com.initprep.interview.entity.TestCase;
@@ -180,6 +177,28 @@ public class QuestionServiceImpl implements QuestionService {
     @Transactional(readOnly = true)
     public boolean questionExists(UUID questionId) {
         return questionRepository.existsById(questionId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public QuestionJudgeResponse getJudgeData(UUID questionId) {
+
+        Question question = questionRepository.findById(questionId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException(
+                    "Question not found: " + questionId
+                )
+            );
+
+        return QuestionJudgeResponse.builder()
+            .questionId(question.getId())
+            .testCases(
+                question.getTestCases()
+                    .stream()
+                    .map(testCaseMapper::toResponse)
+                    .toList()
+            )
+            .build();
     }
 
 }

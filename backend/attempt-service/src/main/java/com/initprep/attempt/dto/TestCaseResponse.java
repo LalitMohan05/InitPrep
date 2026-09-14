@@ -1,4 +1,4 @@
-package com.initprep.judge.dto;
+package com.initprep.attempt.dto;
 
 import lombok.*;
 
@@ -7,13 +7,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TestCaseResult {
-
-    private boolean passed;
+public class TestCaseResponse {
 
     private String input;
 
     private String expectedOutput;
-
-    private String actualOutput;
+    private boolean hidden;
 }

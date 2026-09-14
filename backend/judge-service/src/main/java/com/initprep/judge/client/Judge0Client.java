@@ -34,6 +34,8 @@ public class Judge0Client {
 
             List<TestCaseResult> results = new ArrayList<>();
 
+            TestCaseResult failedTestCase = null;
+
             long totalExecutionTime = 0;
             long maxMemoryUsed = 0;
             int passed = 0;
@@ -88,6 +90,16 @@ public class Judge0Client {
                     passed++;
                 }
 
+                if (!isPassed && failedTestCase == null) {
+                    failedTestCase = TestCaseResult.builder()
+                        .passed(false)
+                        .input(testCase.getInput())
+                        .expectedOutput(testCase.getExpectedOutput())
+                        .actualOutput(result.getStdout())
+                        .hidden(testCase.isHidden())
+                        .build();
+                }
+
                 if (result.getTime() != null) {
                     totalExecutionTime +=
                         (long) (result.getTime() * 1000);
@@ -106,6 +118,7 @@ public class Judge0Client {
                         .input(testCase.getInput())
                         .expectedOutput(testCase.getExpectedOutput())
                         .actualOutput(result.getStdout())
+                        .hidden(testCase.isHidden())
                         .build()
                 );
 
@@ -121,6 +134,7 @@ public class Judge0Client {
                         .memoryUsed(maxMemoryUsed)
                         .compilerOutput(result.getCompileOutput())
                         .runtimeOutput(result.getStderr())
+                        .failedTestCase(failedTestCase)
                         .testCaseResults(results)
                         .build();
                 }
@@ -137,6 +151,7 @@ public class Judge0Client {
                 .totalTestCases(request.getTestCases().size())
                 .executionTime(totalExecutionTime)
                 .memoryUsed(maxMemoryUsed)
+                .failedTestCase(failedTestCase)
                 .testCaseResults(results)
                 .build();
 

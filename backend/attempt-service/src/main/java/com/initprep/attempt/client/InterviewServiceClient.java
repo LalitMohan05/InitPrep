@@ -1,5 +1,6 @@
 package com.initprep.attempt.client;
 
+import com.initprep.attempt.dto.QuestionJudgeResponse;
 import com.initprep.attempt.exception.InterviewServiceException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,33 @@ public class InterviewServiceClient {
 
             throw new InterviewServiceException(
                 "Interview Service is unavailable",
+                e
+            );
+        }
+    }
+
+    public QuestionJudgeResponse getJudgeData(UUID questionId) {
+
+        try {
+
+            String authorization =
+                request.getHeader("Authorization");
+
+            return restClient
+                .get()
+                .uri(
+                    interviewServiceUrl +
+                        "/api/questions/{questionId}/judge-data",
+                    questionId
+                )
+                .header("Authorization", authorization)
+                .retrieve()
+                .body(QuestionJudgeResponse.class);
+
+        } catch (Exception e) {
+
+            throw new InterviewServiceException(
+                "Failed to get judge data for question: " + questionId,
                 e
             );
         }
