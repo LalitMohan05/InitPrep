@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -177,9 +178,6 @@ public class AttemptServiceImpl implements AttemptService {
             .build();
     }
 
-    /*
-     * Response after Judge Service has executed the submission.
-     */
     private AttemptResponse toResponse(
         Attempt attempt,
         JudgeSubmissionResponse judgeResponse
@@ -199,5 +197,51 @@ public class AttemptServiceImpl implements AttemptService {
             .createdAt(attempt.getCreatedAt())
             .updatedAt(attempt.getUpdatedAt())
             .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public JudgeSubmissionResponse runCode(
+        UUID userId,
+        RunCodeRequest request
+    ) {
+
+        // Validate question
+        if (!interviewServiceClient.questionExists(request.getQuestionId())) {
+            throw new ResourceNotFoundException(
+                "Question not found: " + request.getQuestionId()
+            );
+        }
+
+        //Get question test cases
+        QuestionJudgeResponse judgeData =
+            interviewServiceClient.getJudgeData(
+                request.getQuestionId()
+            );
+
+        //Keep only visible test cases
+        List<TestCaseRequest> visibleTestCases =
+            judgeData.getTestCases()
+                .stream()
+                .filter(testCase -> !testCase.isHidden())
+                .map(testCase ->
+                    TestCaseRequest.builder()
+                        .input(testCase.getInput())
+                        .expectedOutput(testCase.getExpectedOutput())
+                        .hidden(false)
+                        .build()
+                )
+                .toList();
+
+        //Send visible test cases to Judge Service
+        JudgeSubmissionRequest judgeRequest =
+            JudgeSubmissionRequest.builder()
+                .sourceCode(request.getSourceCode())
+                .language(request.getLanguage())
+                .testCases(visibleTestCases)
+                .build();
+
+        //Execute code
+        return judgeServiceClient.judge(judgeRequest);
     }
 }

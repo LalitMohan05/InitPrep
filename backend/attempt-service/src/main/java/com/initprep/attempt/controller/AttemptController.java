@@ -2,6 +2,8 @@ package com.initprep.attempt.controller;
 
 import com.initprep.attempt.dto.AttemptResponse;
 import com.initprep.attempt.dto.CreateAttemptRequest;
+import com.initprep.attempt.dto.JudgeSubmissionResponse;
+import com.initprep.attempt.dto.RunCodeRequest;
 import com.initprep.attempt.service.interfaces.AttemptService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +68,19 @@ public class AttemptController {
 
         return ResponseEntity.ok(
             attemptService.findByUserId(userId, pageable)
+        );
+    }
+
+    @PostMapping("/run")
+    public ResponseEntity<JudgeSubmissionResponse> runCode(
+        Authentication authentication,
+        @Valid @RequestBody RunCodeRequest request
+    ) {
+
+        UUID userId = (UUID) authentication.getPrincipal();
+
+        return ResponseEntity.ok(
+            attemptService.runCode(userId, request)
         );
     }
 }
