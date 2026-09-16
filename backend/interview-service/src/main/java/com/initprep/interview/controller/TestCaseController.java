@@ -1,5 +1,6 @@
 package com.initprep.interview.controller;
 
+import com.initprep.interview.dto.BulkTestCaseRequest;
 import com.initprep.interview.dto.TestCaseRequest;
 import com.initprep.interview.dto.TestCaseResponse;
 import com.initprep.interview.service.interfaces.TestCaseService;
@@ -61,5 +62,21 @@ public class TestCaseController {
         testCaseService.deleteTestCase(questionId, testCaseId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<List<TestCaseResponse>> createTestCases(
+        @PathVariable UUID questionId,
+        @Valid @RequestBody BulkTestCaseRequest request
+    ) {
+
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(
+                testCaseService.createTestCases(
+                    questionId,
+                    request
+                )
+            );
     }
 }

@@ -1,5 +1,6 @@
 package com.initprep.interview.service.interfaces;
 
+import com.initprep.interview.dto.BulkTestCaseRequest;
 import com.initprep.interview.dto.TestCaseRequest;
 import com.initprep.interview.dto.TestCaseResponse;
 
@@ -26,5 +27,9 @@ public interface TestCaseService {
 
     List<TestCaseResponse> getTestCases(
         UUID questionId
+    );
+    List<TestCaseResponse> createTestCases(
+        UUID questionId,
+        BulkTestCaseRequest request
     );
 }

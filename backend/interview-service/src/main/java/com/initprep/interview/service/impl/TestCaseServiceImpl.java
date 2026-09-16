@@ -1,9 +1,11 @@
 package com.initprep.interview.service.impl;
 
+import com.initprep.interview.dto.BulkTestCaseRequest;
 import com.initprep.interview.dto.TestCaseRequest;
 import com.initprep.interview.dto.TestCaseResponse;
 import com.initprep.interview.entity.Question;
 import com.initprep.interview.entity.TestCase;
+import com.initprep.interview.enums.QuestionType;
 import com.initprep.interview.exception.DuplicateResourceException;
 import com.initprep.interview.exception.ResourceNotFoundException;
 import com.initprep.interview.mapper.TestCaseMapper;
@@ -136,5 +138,43 @@ public class TestCaseServiceImpl implements TestCaseService {
             .stream()
             .map(testCaseMapper::toResponse)
             .toList();
+    }
+
+    @Override
+    public List<TestCaseResponse> createTestCases(UUID questionId, BulkTestCaseRequest request) {
+
+
+        Question question= questionRepository.findById(questionId)
+            .orElseThrow(()->new ResourceNotFoundException("Question not found " + questionId));
+
+        if (question.getType() != QuestionType.CODING) {
+            throw new IllegalArgumentException(
+                "Test cases can only be added to coding questions"
+            );
+        }
+
+
+        List<TestCase> testCases= request.getTestCases()
+            .stream().map(testCaseRequest ->
+                TestCase.builder()
+                    .input(testCaseRequest.getInput())
+                    .expectedOutput(testCaseRequest.getExpectedOutput())
+                    .hidden(testCaseRequest.isHidden())
+                    .question(question)
+                    .build()
+
+                )
+            .toList();
+        if (testCases.isEmpty()) {
+            throw new IllegalStateException(
+                "No visible test cases available for this question"
+            );
+        }
+
+        List<TestCase> saved = testCaseRepository.saveAll(testCases);
+        return
+            saved.stream()
+                .map(testCaseMapper::toResponse)
+                .toList();
     }
 }
