@@ -1,0 +1,14 @@
+server:
+    port: 8086
+
+spring:
+    application:
+        name: ai-service
+
+    ai:
+        google:
+            genai:
+                api-key: ${GEMINI_API_KEY}
+                chat:
+                    options:
+                        model: gemini-3.6-flash
