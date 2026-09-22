@@ -1,9 +1,6 @@
 package com.initprep.attempt.service.interfaces;
 
-import com.initprep.attempt.dto.AttemptResponse;
-import com.initprep.attempt.dto.CreateAttemptRequest;
-import com.initprep.attempt.dto.JudgeSubmissionResponse;
-import com.initprep.attempt.dto.RunCodeRequest;
+import com.initprep.attempt.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -26,5 +23,10 @@ public interface AttemptService {
     JudgeSubmissionResponse runCode(
         UUID userId,
         RunCodeRequest request
+    );
+
+    CodingFeedbackResponse getAiFeedback(
+        UUID userId,
+        UUID attemptId
     );
 }

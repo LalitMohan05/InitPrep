@@ -65,4 +65,18 @@ public class Attempt {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AttemptType type;
+
+    @OneToOne(
+        mappedBy = "attempt",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private AiFeedback aiFeedback;
+
+    @OneToOne(
+        mappedBy = "attempt",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private JudgeResult judgeResult;
 }

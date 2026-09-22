@@ -1,5 +1,6 @@
 package com.initprep.attempt.client;
 
+import com.initprep.attempt.dto.QuestionDetailsResponse;
 import com.initprep.attempt.dto.QuestionJudgeResponse;
 import com.initprep.attempt.exception.InterviewServiceException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -71,6 +72,32 @@ public class InterviewServiceClient {
 
             throw new InterviewServiceException(
                 "Failed to get judge data for question: " + questionId,
+                e
+            );
+        }
+    }
+
+    public QuestionDetailsResponse getQuestionDetails(UUID questionId) {
+
+        try {
+
+            String authorization = request.getHeader("Authorization");
+
+            return restClient
+                .get()
+                .uri(
+                    interviewServiceUrl +
+                        "/api/questions/{questionId}/details",
+                    questionId
+                )
+                .header("Authorization", authorization)
+                .retrieve()
+                .body(QuestionDetailsResponse.class);
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                "Failed to communicate with Interview Service",
                 e
             );
         }

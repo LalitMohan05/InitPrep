@@ -74,5 +74,14 @@ public class QuestionController {
             questionService.getJudgeData(questionId)
         );
     }
+
+    @GetMapping("/{questionId}/details")
+    public ResponseEntity<QuestionDetailsResponse> getQuestionDetails(
+        @PathVariable UUID questionId
+    ) {
+        return ResponseEntity.ok(
+            questionService.getQuestionDetails(questionId)
+        );
+    }
 }
 

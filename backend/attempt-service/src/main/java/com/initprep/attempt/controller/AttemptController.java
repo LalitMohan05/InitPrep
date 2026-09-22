@@ -1,9 +1,6 @@
 package com.initprep.attempt.controller;
 
-import com.initprep.attempt.dto.AttemptResponse;
-import com.initprep.attempt.dto.CreateAttemptRequest;
-import com.initprep.attempt.dto.JudgeSubmissionResponse;
-import com.initprep.attempt.dto.RunCodeRequest;
+import com.initprep.attempt.dto.*;
 import com.initprep.attempt.service.interfaces.AttemptService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +78,22 @@ public class AttemptController {
 
         return ResponseEntity.ok(
             attemptService.runCode(userId, request)
+        );
+    }
+
+    @GetMapping("/{attemptId}/ai-feedback")
+    public ResponseEntity<CodingFeedbackResponse> getAiFeedback(
+        Authentication authentication,
+        @PathVariable UUID attemptId
+    ) {
+
+        UUID userId = (UUID) authentication.getPrincipal();
+
+        return ResponseEntity.ok(
+            attemptService.getAiFeedback(
+                userId,
+                attemptId
+            )
         );
     }
 }

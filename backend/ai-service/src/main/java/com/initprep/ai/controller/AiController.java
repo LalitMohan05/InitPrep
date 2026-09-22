@@ -24,4 +24,15 @@ public class AiController {
             aiService.generateCodingFeedback(request)
         );
     }
+
+    @GetMapping("/env-test")
+    public String envTest() {
+        String key = System.getenv("GEMINI_API_KEY");
+
+        if (key == null || key.isBlank()) {
+            return "GEMINI_API_KEY is NOT set";
+        }
+
+        return "GEMINI_API_KEY is set. Length = " + key.length();
+    }
 }

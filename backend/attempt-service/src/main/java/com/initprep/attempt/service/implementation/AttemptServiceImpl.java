@@ -1,15 +1,20 @@
 package com.initprep.attempt.service.implementation;
 
+import com.initprep.attempt.client.AiServiceClient;
 import com.initprep.attempt.client.InterviewServiceClient;
 import com.initprep.attempt.client.JudgeServiceClient;
 import com.initprep.attempt.dto.*;
+import com.initprep.attempt.entity.AiFeedback;
 import com.initprep.attempt.entity.Attempt;
+import com.initprep.attempt.entity.JudgeResult;
 import com.initprep.attempt.enums.AttemptResult;
 import com.initprep.attempt.enums.AttemptStatus;
 import com.initprep.attempt.enums.AttemptType;
 import com.initprep.attempt.exception.ResourceForbiddenException;
 import com.initprep.attempt.exception.ResourceNotFoundException;
+import com.initprep.attempt.repository.AiFeedbackRepository;
 import com.initprep.attempt.repository.AttemptRepo;
+import com.initprep.attempt.repository.JudgeResultRepository;
 import com.initprep.attempt.service.interfaces.AttemptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -28,6 +34,9 @@ public class AttemptServiceImpl implements AttemptService {
     private final AttemptRepo attemptRepository;
     private final InterviewServiceClient interviewServiceClient;
     private final JudgeServiceClient judgeServiceClient;
+    private final AiServiceClient aiServiceClient;
+    private final AiFeedbackRepository aiFeedbackRepository;
+    private final JudgeResultRepository judgeResultRepository;
 
     @Override
     public AttemptResponse createAttempt(
@@ -41,6 +50,11 @@ public class AttemptServiceImpl implements AttemptService {
                 "Question not found: " + request.getQuestionId()
             );
         }
+
+        QuestionDetailsResponse question =
+            interviewServiceClient.getQuestionDetails(
+                request.getQuestionId()
+            );
 
         // Create attempt
         Attempt attempt = Attempt.builder()
@@ -101,7 +115,50 @@ public class AttemptServiceImpl implements AttemptService {
             calculateScore(judgeResponse)
         );
 
+
         savedAttempt = attemptRepository.save(savedAttempt);
+
+        JudgeResult judgeResult = JudgeResult.builder()
+            .attempt(savedAttempt)
+            .passedTestCases(
+                judgeResponse.getPassedTestCases()
+            )
+            .totalTestCases(
+                judgeResponse.getTotalTestCases()
+            )
+            .executionTime(
+                judgeResponse.getExecutionTime()
+            )
+            .memoryUsed(
+                judgeResponse.getMemoryUsed()
+            )
+            .compilerOutput(
+                judgeResponse.getCompilerOutput()
+            )
+            .runtimeOutput(
+                judgeResponse.getRuntimeOutput()
+            )
+            .build();
+
+        if (judgeResponse.getFailedTestCase() != null) {
+
+            TestCaseResult failed =
+                judgeResponse.getFailedTestCase();
+
+            judgeResult.setFailedInput(
+                failed.getInput()
+            );
+
+            judgeResult.setExpectedOutput(
+                failed.getExpectedOutput()
+            );
+
+            judgeResult.setActualOutput(
+                failed.getActualOutput()
+            );
+        }
+
+        judgeResultRepository.save(judgeResult);
 
         // Return candidate-facing execution result
         return toResponse(
@@ -158,9 +215,6 @@ public class AttemptServiceImpl implements AttemptService {
             .map(this::toResponse);
     }
 
-    /*
-     * Response for an attempt that has no execution result.
-     */
     private AttemptResponse toResponse(
         Attempt attempt
     ) {
@@ -244,4 +298,126 @@ public class AttemptServiceImpl implements AttemptService {
         //Execute code
         return judgeServiceClient.judge(judgeRequest);
     }
+
+    @Override
+    @Transactional
+    public CodingFeedbackResponse getAiFeedback(
+        UUID userId,
+        UUID attemptId
+    ) {
+
+        Attempt attempt = attemptRepository.findById(attemptId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException(
+                    "Attempt not found: " + attemptId
+                )
+            );
+
+        if (!attempt.getUserId().equals(userId)) {
+            throw new ResourceForbiddenException(
+                "Attempt does not belong to this user"
+            );
+        }
+
+        Optional<AiFeedback> existingFeedback =
+            aiFeedbackRepository.findByAttemptId(attemptId);
+
+        if (existingFeedback.isPresent()) {
+            return toCodingFeedbackResponse(
+                existingFeedback.get()
+            );
+        }
+
+        // Get question details
+        QuestionDetailsResponse question =
+            interviewServiceClient.getQuestionDetails(
+                attempt.getQuestionId()
+            );
+
+// Get stored judge result
+        JudgeResult judgeResult =
+            judgeResultRepository.findByAttemptId(attemptId)
+                .orElseThrow(() ->
+                    new ResourceNotFoundException(
+                        "Judge result not found for attempt: "
+                            + attemptId
+                    )
+                );
+
+// Build AI request
+        CodingFeedbackRequest aiRequest =
+            CodingFeedbackRequest.builder()
+                .question(question.getDescription())
+                .code(attempt.getAnswer())
+                .language(attempt.getLanguage())
+                .status(attempt.getResult().name())
+                .passedTestCases(
+                    judgeResult.getPassedTestCases()
+                )
+                .totalTestCases(
+                    judgeResult.getTotalTestCases()
+                )
+                .input(
+                    judgeResult.getFailedInput()
+                )
+                .expectedOutput(
+                    judgeResult.getExpectedOutput()
+                )
+                .actualOutput(
+                    judgeResult.getActualOutput()
+                )
+                .compilerOutput(
+                    judgeResult.getCompilerOutput()
+                )
+                .runtimeOutput(
+                    judgeResult.getRuntimeOutput()
+                )
+                .build();
+
+// Call AI Service
+        CodingFeedbackResponse aiResponse =
+            aiServiceClient.generateCodingFeedback(
+                aiRequest
+            );
+
+// Save AI feedback
+        AiFeedback feedback =
+            AiFeedback.builder()
+                .attempt(attempt)
+                .summary(aiResponse.getSummary())
+                .mistake(aiResponse.getMistake())
+                .explanation(aiResponse.getExplanation())
+                .suggestion(aiResponse.getSuggestion())
+                .complexityAnalysis(
+                    aiResponse.getComplexityAnalysis()
+                )
+                .optimizedApproach(
+                    aiResponse.getOptimizedApproach()
+                )
+                .build();
+
+        aiFeedbackRepository.save(feedback);
+
+// Return generated feedback
+        return aiResponse;
+    }
+
+    private CodingFeedbackResponse toCodingFeedbackResponse(
+        AiFeedback feedback
+    ) {
+
+        return CodingFeedbackResponse.builder()
+            .summary(feedback.getSummary())
+            .mistake(feedback.getMistake())
+            .explanation(feedback.getExplanation())
+            .suggestion(feedback.getSuggestion())
+            .complexityAnalysis(
+                feedback.getComplexityAnalysis()
+            )
+            .optimizedApproach(
+                feedback.getOptimizedApproach()
+            )
+            .build();
+    }
+
 }

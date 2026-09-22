@@ -201,4 +201,22 @@ public class QuestionServiceImpl implements QuestionService {
             .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public QuestionDetailsResponse getQuestionDetails(UUID questionId) {
+
+        Question question = questionRepository.findById(questionId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException(
+                    "Question not found: " + questionId
+                )
+            );
+
+        return QuestionDetailsResponse.builder()
+            .id(question.getId())
+            .title(question.getTitle())
+            .description(question.getDescription())
+            .build();
+    }
+
 }
