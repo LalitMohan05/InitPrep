@@ -54,6 +54,10 @@ public class SecurityConfig {
                     "/api/questions/*/test-cases"
                 ).hasRole("ADMIN")
                 .requestMatchers(
+                    HttpMethod.POST,
+                    "/api/questions/*/test-cases/bulk"
+                ).hasRole("ADMIN")
+                .requestMatchers(
                     HttpMethod.DELETE,
                     "/api/questions/*/test-cases/*"
                 ).hasRole("ADMIN")

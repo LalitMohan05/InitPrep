@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export function AppLayout() {
@@ -15,10 +15,15 @@ export function AppLayout() {
         <Link className="brand" to={user ? "/dashboard" : "/login"}>
           <span className="brand-mark">IP</span> InitPrep
         </Link>
-        <div className="topbar-right">
-          {user ? <><span className="user-email">{user.email}</span><button className="quiet-button" onClick={handleSignOut}>Sign out</button></> : <Link className="quiet-button link-button" to="/login">Sign in</Link>}
-        </div>
+        <div className="topbar-right">{user ? <><span className="user-email">{user.email}</span><button className="quiet-button" onClick={handleSignOut}>Logout</button></> : <Link className="quiet-button link-button" to="/login">Sign in</Link>}</div>
       </header>
+      {user && <nav className="main-nav" aria-label="Main navigation">
+        <NavLink to="/dashboard">Dashboard</NavLink>
+        <NavLink to="/questions">Questions</NavLink>
+        {user.role === "ADMIN" && <><NavLink to="/manage-questions">Manage Questions</NavLink><NavLink to="/manage-test-cases">Manage Test Cases</NavLink></>}
+        <NavLink to="/attempts">My Attempts</NavLink>
+        <NavLink to="/profile">Profile</NavLink>
+      </nav>}
       <main className="main-content"><Outlet /></main>
       <footer className="footer">A focused place to prepare for your next interview.</footer>
     </div>
