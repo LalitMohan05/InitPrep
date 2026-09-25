@@ -8,6 +8,7 @@ import { QuestionsPage } from "./pages/QuestionsPage";
 import { QuestionDetailsPage } from "./pages/QuestionDetailsPage";
 import { TestCaseManagerPage } from "./pages/TestCaseManagerPage";
 import { AdminRoute } from "./components/AdminRoute";
+import { CodingWorkspacePage } from "./pages/CodingWorkspacePage";
 import { useAuth } from "./context/AuthContext";
 
 function HomeRedirect() {
@@ -25,6 +26,7 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<PlaceholderPage title="Dashboard" />} />
         <Route path="/questions" element={<QuestionsPage />} />
+        <Route path="/questions/:questionId/solve" element={<CodingWorkspacePage />} />
         <Route path="/questions/:questionId" element={<QuestionDetailsPage />} />
         <Route path="/attempts" element={<PlaceholderPage title="My Attempts" />} />
         <Route path="/attempts/:attemptId" element={<PlaceholderPage title="Attempt Details" />} />

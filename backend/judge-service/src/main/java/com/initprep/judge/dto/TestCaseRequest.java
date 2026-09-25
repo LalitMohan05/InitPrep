@@ -12,7 +12,6 @@ public class TestCaseRequest {
 
     private boolean passed;
 
-    @NotBlank
     private String input;
 
     @NotBlank

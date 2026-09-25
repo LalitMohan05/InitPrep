@@ -1,8 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import * as questionsApi from "../api/questionsApi";
+import { MonacoCodeEditor } from "../components/MonacoCodeEditor";
 import { useAuth } from "../context/AuthContext";
 import type { QuestionDetails, QuestionSummary } from "../types/questions";
+import { normalizeQuestionText, questionExamples } from "../utils/questionContent";
 
 export function QuestionDetailsPage() {
   const { questionId = "" } = useParams();
@@ -15,13 +17,14 @@ export function QuestionDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(false);
+  const [starterCode, setStarterCode] = useState("");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
     let active = true;
     questionsApi.getQuestionDetails(questionId)
-      .then(value => { if (active) setQuestion(value); })
+      .then(value => { if (active) { setQuestion(value); setStarterCode(normalizeQuestionText(value.starterCode, true)); } })
       .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Could not load this question."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -36,9 +39,24 @@ export function QuestionDetailsPage() {
     try {
       await questionsApi.updateQuestion(questionId, {
         title: String(data.get("title")).trim(),
-        description: String(data.get("description")).trim(),
+        description: String(data.get("description")),
+        constraints: String(data.get("constraints") ?? ""),
+        examples: String(data.get("examples") ?? ""),
+        hints: String(data.get("hints") ?? ""),
+        starterCode: String(data.get("starterCode") ?? ""),
+        expectedComplexity: String(data.get("expectedComplexity") ?? ""),
       });
-      setQuestion({ ...question, title: String(data.get("title")).trim(), description: String(data.get("description")).trim() });
+      setQuestion({
+        ...question,
+        title: String(data.get("title")).trim(),
+        description: String(data.get("description")),
+        constraints: String(data.get("constraints") ?? ""),
+        examples: String(data.get("examples") ?? ""),
+        hints: String(data.get("hints") ?? ""),
+        starterCode: String(data.get("starterCode") ?? ""),
+        expectedComplexity: String(data.get("expectedComplexity") ?? ""),
+      });
+      setStarterCode(String(data.get("starterCode") ?? ""));
       setEditing(false);
       setNotice("Question updated.");
     } catch (cause) {
@@ -69,16 +87,31 @@ export function QuestionDetailsPage() {
     <article className="detail-panel">
       <div className="page-heading detail-heading">
         <div><p className="eyebrow">{summary ? `${summary.difficulty} · ${summary.type}` : "QUESTION"}</p><h1>{question.title}</h1></div>
-        {admin && <div className="row-actions"><button className="secondary-button" onClick={() => setEditing(value => !value)}>{editing ? "Cancel edit" : "Edit question"}</button><button className="secondary-button danger-button" onClick={() => void remove()}>Delete</button><Link className="secondary-button" to={`/questions/${questionId}/test-cases`}>Manage test cases</Link></div>}
+        {admin && <div className="row-actions"><button className="secondary-button" onClick={() => { if (!editing) setStarterCode(normalizeQuestionText(question.starterCode, true)); setEditing(value => !value); }}>{editing ? "Cancel edit" : "Edit question"}</button><button className="secondary-button danger-button" onClick={() => void remove()}>Delete</button><Link className="secondary-button" to={`/questions/${questionId}/test-cases`}>Manage test cases</Link></div>}
       </div>
       {editing && admin ? <form className="data-form edit-question-form" onSubmit={save}>
         <label>Title<input name="title" maxLength={200} defaultValue={question.title} required /></label>
-        <label>Description<textarea name="description" rows={10} defaultValue={question.description} required /></label>
-        <p className="field-hint">The details API returns only the title and description. Those are the fields available to edit here.</p>
+        <label>Description<textarea name="description" rows={8} defaultValue={normalizeQuestionText(question.description)} required /></label>
+        <label>Constraints<textarea name="constraints" rows={3} defaultValue={normalizeQuestionText(question.constraints)} /></label>
+        <label>Examples<textarea name="examples" rows={6} defaultValue={normalizeQuestionText(question.examples)} /></label>
+        <label>Hints<textarea name="hints" rows={3} defaultValue={normalizeQuestionText(question.hints)} /></label>
+        <label className="starter-code-field">Starter Code
+          <span className="field-hint">Code shown to candidates when they open the coding question.</span>
+          <input type="hidden" name="starterCode" value={starterCode} />
+          <MonacoCodeEditor className="starter-code-monaco" ariaLabel="Starter code" value={starterCode} onChange={setStarterCode} language="java" height="340px" />
+        </label>
+        <label>Expected complexity<textarea name="expectedComplexity" rows={2} defaultValue={normalizeQuestionText(question.expectedComplexity)} /></label>
         <button className="primary-button compact-button" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
       </form> : <>
-        <div className="problem-description">{question.description}</div>
-        <div className="preparation-note"><strong>Ready to work on it?</strong><p>Use this page to review the problem. The coding workspace will be added in a later step.</p></div>
+        <div className="question-detail-sections">
+          <section><h2>Problem</h2><pre>{normalizeQuestionText(question.description)}</pre></section>
+          {question.constraints && <section><h2>Constraints</h2><pre>{normalizeQuestionText(question.constraints)}</pre></section>}
+          {question.examples && <section><h2>Examples</h2>{questionExamples(question.examples).map((example, index) => <pre className="example-block" key={index}>{example}</pre>)}</section>}
+          {question.hints && <section><h2>Hints</h2><pre>{normalizeQuestionText(question.hints)}</pre></section>}
+          {question.starterCode && <section><h2>Starter code</h2><pre className="starter-preview">{normalizeQuestionText(question.starterCode, true)}</pre></section>}
+          {question.expectedComplexity && <section><h2>Expected complexity</h2><pre>{normalizeQuestionText(question.expectedComplexity)}</pre></section>}
+        </div>
+          {question.type === "CODING" && <div className="preparation-note"><strong>Ready to work on it?</strong><p>Open the coding workspace to write and run a solution.</p><Link className="secondary-button solve-link" to={`/questions/${questionId}/solve`}>Open coding workspace</Link></div>}
       </>}
     </article>
   </section>;

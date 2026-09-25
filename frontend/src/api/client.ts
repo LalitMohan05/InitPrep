@@ -68,12 +68,24 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
   if (!response.ok) {
     if (response.status === 401) clearToken();
+    const body = typeof payload === "object" && payload !== null ? payload as Record<string, unknown> : null;
+    const backendMessage = body && ("message" in body || "detail" in body || "error" in body)
+      ? String(body.message ?? body.detail ?? body.error)
+      : body && "errors" in body
+        ? `Backend validation errors: ${JSON.stringify(body.errors)}`
+        : undefined;
     const message =
-      typeof payload === "object" && payload !== null && "message" in payload
-        ? String(payload.message)
+      backendMessage ?? (response.status === 400
+        ? "The backend rejected the request. Check the response details below."
         : response.status === 401
           ? "Your session has expired. Please sign in again."
-          : "The request could not be completed. Please try again.";
+          : response.status === 403
+            ? "The authenticated request was denied by an authorization rule."
+            : response.status === 404
+              ? "The requested resource was not found."
+              : response.status >= 500
+                ? "The backend could not complete the request. See its response below."
+                : "The request could not be completed. See the response below.");
     throw new ApiError(message, response.status, text, requestUrl);
   }
 

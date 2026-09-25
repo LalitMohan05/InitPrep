@@ -5,10 +5,11 @@ spring:
     application:
         name: ai-service
 
+
     ai:
-        google:
-            genai:
-                api-key: ${GEMINI_API_KEY}
-                chat:
-                    options:
-                        model: gemini-3.6-flash
+        openai:
+            api-key: ${OPENROUTER_API_KEY}
+            base-url: https://openrouter.ai/api
+            chat:
+                options:
+                    model: openai/gpt-4o-mini

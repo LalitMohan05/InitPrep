@@ -203,6 +203,21 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional(readOnly = true)
+    public QuestionJudgeResponse getPublicTestCases(UUID questionId) {
+        Question question = questionRepository.findById(questionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Question not found: " + questionId));
+
+        return QuestionJudgeResponse.builder()
+            .questionId(question.getId())
+            .testCases(question.getTestCases().stream()
+                .filter(testCase -> !testCase.isHidden())
+                .map(testCaseMapper::toResponse)
+                .toList())
+            .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public QuestionDetailsResponse getQuestionDetails(UUID questionId) {
 
         Question question = questionRepository.findById(questionId)
@@ -216,6 +231,13 @@ public class QuestionServiceImpl implements QuestionService {
             .id(question.getId())
             .title(question.getTitle())
             .description(question.getDescription())
+            .difficulty(question.getDifficulty())
+            .type(question.getType())
+            .constraints(question.getConstraints())
+            .examples(question.getExamples())
+            .hints(question.getHints())
+            .starterCode(question.getStarterCode())
+            .expectedComplexity(question.getExpectedComplexity())
             .build();
     }
 

@@ -75,6 +75,13 @@ public class QuestionController {
         );
     }
 
+    @GetMapping("/{questionId}/public-test-cases")
+    public ResponseEntity<QuestionJudgeResponse> getPublicTestCases(
+        @PathVariable UUID questionId
+    ) {
+        return ResponseEntity.ok(questionService.getPublicTestCases(questionId));
+    }
+
     @GetMapping("/{questionId}/details")
     public ResponseEntity<QuestionDetailsResponse> getQuestionDetails(
         @PathVariable UUID questionId
@@ -84,4 +91,3 @@ public class QuestionController {
         );
     }
 }
-

@@ -21,6 +21,7 @@ public interface QuestionService {
 
     boolean questionExists(UUID questionId);
     QuestionJudgeResponse getJudgeData(UUID questionId);
+    QuestionJudgeResponse getPublicTestCases(UUID questionId);
 
     QuestionDetailsResponse getQuestionDetails(UUID questionId);
 }

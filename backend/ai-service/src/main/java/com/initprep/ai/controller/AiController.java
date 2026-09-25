@@ -30,9 +30,9 @@ public class AiController {
         String key = System.getenv("GEMINI_API_KEY");
 
         if (key == null || key.isBlank()) {
-            return "GEMINI_API_KEY is NOT set";
+            return "OpenRoute is NOT set";
         }
 
-        return "GEMINI_API_KEY is set. Length = " + key.length();
+        return "OpenRoute API is set. Length = " + key.length();
     }
 }

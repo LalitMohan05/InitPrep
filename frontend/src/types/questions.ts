@@ -24,6 +24,13 @@ export interface QuestionDetails {
   id: string;
   title: string;
   description: string;
+  difficulty?: Difficulty | null;
+  type?: QuestionType | null;
+  constraints?: string | null;
+  examples?: string | null;
+  hints?: string | null;
+  starterCode?: string | null;
+  expectedComplexity?: string | null;
 }
 
 export interface QuestionPage {
