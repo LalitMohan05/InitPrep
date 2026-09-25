@@ -10,5 +10,5 @@ import java.util.List;
 @Builder
 public class Judge0BatchSubmissionResponse {
 
-    private List<Judge0SubmissionToken> submissions;
+    private List<Judge0SubmissionResponse> submissions;
 }

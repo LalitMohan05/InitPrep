@@ -36,9 +36,9 @@ class Judge0ClientEmptyInputTests {
                 {"submissions":[{"source_code":"class Main {}","language_id":62,"stdin":"","expected_output":"0","cpu_time_limit":2.0,"memory_limit":128000.0}]}
                 """))
             .andRespond(withSuccess("[{\"token\":\"empty-input-case\"}]", APPLICATION_JSON));
-        server.expect(requestTo("http://judge0.test/submissions/empty-input-case?base64_encoded=false"))
+        server.expect(requestTo("http://judge0.test/submissions/batch?tokens=empty-input-case&base64_encoded=false"))
             .andExpect(method(GET))
-            .andRespond(withSuccess("{\"stdout\":\"0\",\"time\":0.001,\"memory\":1000,\"status\":{\"id\":3,\"description\":\"Accepted\"}}", APPLICATION_JSON));
+            .andRespond(withSuccess("{\"submissions\":[{\"token\":\"empty-input-case\",\"stdout\":\"0\",\"time\":0.001,\"memory\":1000,\"status\":{\"id\":3,\"description\":\"Accepted\"}}]}", APPLICATION_JSON));
 
         JudgeSubmissionRequest request = JudgeSubmissionRequest.builder()
             .sourceCode("class Main {}")
