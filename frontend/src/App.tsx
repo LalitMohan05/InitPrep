@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AppLayout } from "./layouts/AppLayout";
 import { LoginPage } from "./pages/LoginPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { QuestionsPage } from "./pages/QuestionsPage";
 import { QuestionDetailsPage } from "./pages/QuestionDetailsPage";
@@ -14,6 +13,7 @@ import { AttemptDetailsPage } from "./pages/AttemptDetailsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { MockInterviewStartPage } from "./pages/MockInterviewStartPage";
 import { MockInterviewSessionPage } from "./pages/MockInterviewSessionPage";
+import { DashboardPage } from "./pages/DashboardPage";
 import { useAuth } from "./context/AuthContext";
 
 function HomeRedirect() {
@@ -29,7 +29,7 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<PlaceholderPage title="Dashboard" />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/questions" element={<QuestionsPage />} />
         <Route path="/questions/:questionId/solve" element={<CodingWorkspacePage />} />
         <Route path="/questions/:questionId" element={<QuestionDetailsPage />} />
