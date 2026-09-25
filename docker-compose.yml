@@ -8,9 +8,9 @@ services:
         restart: unless-stopped
 
         environment:
-            POSTGRES_DB: auth_db
-            POSTGRES_USER: lalitdo
-            POSTGRES_PASSWORD: password
+            POSTGRES_DB: ${POSTGRES_DB:-auth_db}
+            POSTGRES_USER: ${POSTGRES_USER:-lalitdo}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the ignored .env file}
 
         ports:
             - "5432:5432"
@@ -29,8 +29,8 @@ services:
         restart: unless-stopped
 
         environment:
-            PGADMIN_DEFAULT_EMAIL: lalit@gmail.com
-            PGADMIN_DEFAULT_PASSWORD: password
+            PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+            PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?Set PGADMIN_DEFAULT_PASSWORD in the ignored .env file}
 
         ports:
             - "5050:80"

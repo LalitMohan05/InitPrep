@@ -1,6 +1,6 @@
-// In development, route through Vite so the browser does not need cross-origin
-// access to the Gateway. Vite forwards these requests to localhost:8080.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "" : "http://localhost:8080");
+// Development uses Vite's /api proxy by default. Production must be configured
+// with the public HTTPS Gateway URL through VITE_API_URL.
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
 const TOKEN_KEY = "initprep_access_token";
 
 export class ApiError extends Error {
@@ -36,6 +36,14 @@ export function clearToken(): void {
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  if (!import.meta.env.DEV && !API_BASE_URL) {
+    throw new ApiError(
+      "VITE_API_URL is not configured. Set it to the public HTTPS URL of the InitPrep API Gateway in the deployment environment.",
+      0,
+      "",
+      path,
+    );
+  }
   const requestUrl = `${API_BASE_URL}${path}`;
   const headers = new Headers(options.headers);
   if (options.body && !headers.has("Content-Type")) {

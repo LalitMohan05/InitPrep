@@ -1,20 +1,20 @@
 server:
-    port: 8081
+    port: ${PORT:8081}
 
 spring:
     application:
         name: auth-service
 
     datasource:
-        url: jdbc:postgresql://localhost:5432/auth_db
-        username: lalit
-        password: password
+        url: ${AUTH_DATABASE_URL:jdbc:postgresql://localhost:5432/auth_db}
+        username: ${AUTH_DATABASE_USERNAME:lalit}
+        password: ${AUTH_DATABASE_PASSWORD}
 
     jpa:
         hibernate:
-            ddl-auto: update
-        show-sql: true
+            ddl-auto: ${JPA_DDL_AUTO:update}
+        show-sql: ${JPA_SHOW_SQL:false}
 
 jwt:
-    secret: pgPBygKgBTmm6ClKjfcb12cYo5IPDTwcRvtgqbyTSJQ=
+    secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:86400000}

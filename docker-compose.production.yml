@@ -1,0 +1,164 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - initprep_production_postgres:/var/lib/postgresql/data
+      - ./deploy/postgres-init:/docker-entrypoint-initdb.d:ro
+    networks: [initprep]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: auth-service }
+    restart: unless-stopped
+    environment:
+      PORT: 8081
+      AUTH_DATABASE_URL: jdbc:postgresql://postgres:5432/auth_db
+      AUTH_DATABASE_USERNAME: ${POSTGRES_USER}
+      AUTH_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [initprep]
+
+  user-service:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: user-service }
+    restart: unless-stopped
+    environment:
+      PORT: 8082
+      USER_DATABASE_URL: jdbc:postgresql://postgres:5432/user_db
+      USER_DATABASE_USERNAME: ${POSTGRES_USER}
+      USER_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [initprep]
+
+  interview-service:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: interview-service }
+    restart: unless-stopped
+    environment:
+      PORT: 8083
+      INTERVIEW_DATABASE_URL: jdbc:postgresql://postgres:5432/interview_db
+      INTERVIEW_DATABASE_USERNAME: ${POSTGRES_USER}
+      INTERVIEW_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [initprep]
+
+  judge-service:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: judge-service }
+    restart: unless-stopped
+    environment:
+      PORT: 8085
+      JUDGE0_URL: ${JUDGE0_URL:?Set JUDGE0_URL}
+      JUDGE0_API_KEY: ${JUDGE0_API_KEY:-}
+    networks: [initprep]
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: ai-service }
+    restart: unless-stopped
+    environment:
+      PORT: 8086
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Set OPENAI_API_KEY}
+    networks: [initprep]
+
+  attempt-service:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: attempt-service }
+    restart: unless-stopped
+    environment:
+      PORT: 8084
+      ATTEMPT_DATABASE_URL: jdbc:postgresql://postgres:5432/attempt_db
+      ATTEMPT_DATABASE_USERNAME: ${POSTGRES_USER}
+      ATTEMPT_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+      INTERVIEW_SERVICE_URL: http://interview-service:8083
+      JUDGE_SERVICE_URL: http://judge-service:8085
+      AI_SERVICE_URL: http://ai-service:8086
+    depends_on:
+      postgres: { condition: service_healthy }
+      interview-service: { condition: service_started }
+      judge-service: { condition: service_started }
+      ai-service: { condition: service_started }
+    networks: [initprep]
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: gateway-service }
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      AUTH_SERVICE_URL: http://auth-service:8081
+      USER_SERVICE_URL: http://user-service:8082
+      INTERVIEW_SERVICE_URL: http://interview-service:8083
+      ATTEMPT_SERVICE_URL: http://attempt-service:8084
+      FRONTEND_ALLOWED_ORIGINS: ${FRONTEND_ALLOWED_ORIGINS:?Set FRONTEND_ALLOWED_ORIGINS including local and Vercel origins}
+    depends_on:
+      - auth-service
+      - user-service
+      - interview-service
+      - attempt-service
+    networks: [initprep]
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN to the public DNS name for this host}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - initprep_caddy_data:/data
+      - initprep_caddy_config:/config
+    depends_on: [gateway-service]
+    networks: [initprep]
+
+networks:
+  initprep:
+    driver: bridge
+
+volumes:
+  initprep_production_postgres:
+  initprep_caddy_data:
+  initprep_caddy_config:

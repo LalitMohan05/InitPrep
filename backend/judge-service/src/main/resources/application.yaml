@@ -3,7 +3,8 @@ spring:
     name: judge-service
 
 server:
-    port: 8085
+    port: ${PORT:8085}
 
 judge0:
-    url: https://ce.judge0.com
+    url: ${JUDGE0_URL:https://ce.judge0.com}
+    api-key: ${JUDGE0_API_KEY:}

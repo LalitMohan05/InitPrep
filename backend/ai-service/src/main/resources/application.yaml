@@ -1,9 +1,10 @@
 server:
-    port: 8086
+    port: ${PORT:8086}
 
 spring:
     application:
         name: ai-service
+
 
 
     ai:

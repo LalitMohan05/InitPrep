@@ -1,19 +1,19 @@
 server:
-    port: 8083
+    port: ${PORT:8083}
 
 spring:
     application:
         name: interview-service
 
     datasource:
-        url: jdbc:postgresql://localhost:5432/interview_db
-        username: lalit
-        password: password
+        url: ${INTERVIEW_DATABASE_URL:jdbc:postgresql://localhost:5432/interview_db}
+        username: ${INTERVIEW_DATABASE_USERNAME:lalit}
+        password: ${INTERVIEW_DATABASE_PASSWORD}
 
     jpa:
         hibernate:
-            ddl-auto: update
-        show-sql: true
+            ddl-auto: ${JPA_DDL_AUTO:update}
+        show-sql: ${JPA_SHOW_SQL:false}
 jwt:
-    secret: pgPBygKgBTmm6ClKjfcb12cYo5IPDTwcRvtgqbyTSJQ=
+    secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:86400000}

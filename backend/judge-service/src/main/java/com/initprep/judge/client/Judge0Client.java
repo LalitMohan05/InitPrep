@@ -11,6 +11,7 @@ import com.initprep.judge.exception.Judge0Exception;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -39,6 +40,9 @@ public class Judge0Client {
 
     @Value("${judge0.url}")
     private String judge0Url;
+
+    @Value("${judge0.api-key:}")
+    private String judge0ApiKey;
 
     public JudgeSubmissionResponse execute(JudgeSubmissionRequest request) {
         try {
@@ -162,6 +166,7 @@ public class Judge0Client {
                 .build();
             return restClient.post()
                 .uri(judge0Url + "/submissions/batch?base64_encoded=false")
+                .headers(this::addAuthenticationHeader)
                 .body(request)
                 .retrieve()
                 .body(new ParameterizedTypeReference<List<Judge0SubmissionToken>>() { });
@@ -181,11 +186,18 @@ public class Judge0Client {
                 .toUri();
             Judge0BatchSubmissionResponse response = restClient.get()
                 .uri(uri)
+                .headers(this::addAuthenticationHeader)
                 .retrieve()
                 .body(Judge0BatchSubmissionResponse.class);
             return response == null ? null : response.getSubmissions();
         } catch (Exception e) {
             throw new Judge0Exception("Judge0 batch result retrieval failed", e);
+        }
+    }
+
+    private void addAuthenticationHeader(HttpHeaders headers) {
+        if (judge0ApiKey != null && !judge0ApiKey.isBlank()) {
+            headers.set("X-Auth-Token", judge0ApiKey);
         }
     }
 

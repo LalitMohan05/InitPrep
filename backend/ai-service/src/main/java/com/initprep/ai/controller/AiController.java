@@ -33,15 +33,4 @@ public class AiController {
     ) {
         return ResponseEntity.ok(aiService.evaluateTheoryAnswer(request));
     }
-
-    @GetMapping("/env-test")
-    public String envTest() {
-        String key = System.getenv("GEMINI_API_KEY");
-
-        if (key == null || key.isBlank()) {
-            return "OpenRoute is NOT set";
-        }
-
-        return "OpenRoute API is set. Length = " + key.length();
-    }
 }

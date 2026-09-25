@@ -1,29 +1,29 @@
 server:
-    port: 8084
+    port: ${PORT:8084}
 
 spring:
     application:
         name: attempt-service
 
     datasource:
-        url: jdbc:postgresql://localhost:5432/attempt_db
-        username: lalit
-        password: password
+        url: ${ATTEMPT_DATABASE_URL:jdbc:postgresql://localhost:5432/attempt_db}
+        username: ${ATTEMPT_DATABASE_USERNAME:lalit}
+        password: ${ATTEMPT_DATABASE_PASSWORD}
 
     jpa:
         hibernate:
-            ddl-auto: update
-        show-sql: true
+            ddl-auto: ${JPA_DDL_AUTO:update}
+        show-sql: ${JPA_SHOW_SQL:false}
 jwt:
-    secret: pgPBygKgBTmm6ClKjfcb12cYo5IPDTwcRvtgqbyTSJQ=
+    secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:86400000}
 
 services:
     interview:
-        url: http://localhost:8083
+        url: ${INTERVIEW_SERVICE_URL:http://localhost:8083}
 
     judge:
-        url: http://localhost:8085
+        url: ${JUDGE_SERVICE_URL:http://localhost:8085}
 
     ai:
-        url: http://localhost:8086
+        url: ${AI_SERVICE_URL:http://localhost:8086}

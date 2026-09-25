@@ -20,6 +20,7 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -40,6 +41,28 @@ class Judge0ClientBatchTests {
     @Test
     void splitsThirtyCasesIntoTwentyAndTenAndCombinesInOriginalOrder() {
         assertAcceptedBatches(30, 20, 10);
+    }
+
+    @Test
+    void sendsConfiguredApiKeyForSubmissionAndResultPolling() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        Judge0Client client = client(builder);
+        ReflectionTestUtils.setField(client, "judge0ApiKey", "test-only-judge0-key");
+
+        server.expect(requestTo(JUDGE0 + "/submissions/batch?base64_encoded=false"))
+            .andExpect(method(POST))
+            .andExpect(header("X-Auth-Token", "test-only-judge0-key"))
+            .andRespond(withSuccess(tokenJson(List.of("key-test")), APPLICATION_JSON));
+        server.expect(requestTo(JUDGE0 + "/submissions/batch?tokens=key-test&base64_encoded=false"))
+            .andExpect(method(GET))
+            .andExpect(header("X-Auth-Token", "test-only-judge0-key"))
+            .andRespond(withSuccess("""
+                {"submissions":[{"token":"key-test","stdout":"ok","status":{"id":3,"description":"Accepted"}}]}
+                """, APPLICATION_JSON));
+
+        assertEquals(JudgeStatus.ACCEPTED, client.execute(request(1)).getStatus());
+        server.verify();
     }
 
     @Test
