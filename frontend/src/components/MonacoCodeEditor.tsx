@@ -8,9 +8,10 @@ interface Props {
   className?: string;
   height?: string;
   ariaLabel: string;
+  readOnly?: boolean;
 }
 
-export function MonacoCodeEditor({ value, onChange, language = "java", className, height = "100%", ariaLabel }: Props) {
+export function MonacoCodeEditor({ value, onChange, language = "java", className, height = "100%", ariaLabel, readOnly = false }: Props) {
   const { theme } = useTheme();
 
   return <div className={className} aria-label={ariaLabel}>
@@ -22,6 +23,8 @@ export function MonacoCodeEditor({ value, onChange, language = "java", className
       onChange={nextValue => onChange(nextValue ?? "")}
       options={{
         ariaLabel,
+        readOnly,
+        domReadOnly: readOnly,
         automaticLayout: true,
         minimap: { enabled: false },
         wordWrap: "off",

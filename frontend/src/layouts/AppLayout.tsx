@@ -23,7 +23,7 @@ export function AppLayout() {
         <NavLink to="/dashboard">Dashboard</NavLink>
         <NavLink to="/questions">Questions</NavLink>
         {user.role === "ADMIN" && <><NavLink to="/manage-questions">Manage Questions</NavLink><NavLink to="/manage-test-cases">Manage Test Cases</NavLink></>}
-        <NavLink to="/attempts">My Attempts</NavLink>
+        <NavLink to="/my-attempts">My Attempts</NavLink>
         <NavLink to="/profile">Profile</NavLink>
       </nav>}
       <main className="main-content"><Outlet /></main>

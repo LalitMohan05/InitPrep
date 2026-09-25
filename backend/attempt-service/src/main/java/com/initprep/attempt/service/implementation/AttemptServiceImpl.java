@@ -202,7 +202,7 @@ public class AttemptServiceImpl implements AttemptService {
             );
         }
 
-        return toResponse(attempt);
+        return toDetailsResponse(attempt);
     }
 
     @Override
@@ -224,6 +224,7 @@ public class AttemptServiceImpl implements AttemptService {
         return AttemptResponse.builder()
             .id(attempt.getId())
             .questionId(attempt.getQuestionId())
+            .type(attempt.getType())
             .language(attempt.getLanguage())
             .status(attempt.getStatus())
             .result(attempt.getResult())
@@ -242,6 +243,7 @@ public class AttemptServiceImpl implements AttemptService {
         return AttemptResponse.builder()
             .id(attempt.getId())
             .questionId(attempt.getQuestionId())
+            .type(attempt.getType())
             .language(attempt.getLanguage())
             .status(attempt.getStatus())
             .result(attempt.getResult())
@@ -253,6 +255,32 @@ public class AttemptServiceImpl implements AttemptService {
             .createdAt(attempt.getCreatedAt())
             .updatedAt(attempt.getUpdatedAt())
             .build();
+    }
+
+    private AttemptResponse toDetailsResponse(Attempt attempt) {
+        AttemptResponse response = toResponse(attempt);
+        response.setAnswer(attempt.getAnswer());
+
+        Optional<JudgeResult> savedJudgeResult = judgeResultRepository.findByAttemptId(attempt.getId());
+        if (savedJudgeResult.isPresent()) {
+            JudgeResult judgeResult = savedJudgeResult.get();
+            response.setPassedTestCases(judgeResult.getPassedTestCases());
+            response.setTotalTestCases(judgeResult.getTotalTestCases());
+            response.setExecutionTime(judgeResult.getExecutionTime());
+            response.setMemoryUsed(judgeResult.getMemoryUsed());
+            response.setCompilerOutput(judgeResult.getCompilerOutput());
+            response.setRuntimeOutput(judgeResult.getRuntimeOutput());
+            if (judgeResult.getFailedInput() != null) {
+                response.setFailedTestCase(TestCaseResult.builder()
+                    .passed(false)
+                    .input(judgeResult.getFailedInput())
+                    .expectedOutput(judgeResult.getExpectedOutput())
+                    .actualOutput(judgeResult.getActualOutput())
+                    .hidden(true)
+                    .build());
+            }
+        }
+        return response;
     }
 
     @Override

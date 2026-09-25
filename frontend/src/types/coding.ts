@@ -50,13 +50,29 @@ export interface JudgeSubmissionResponse {
 export interface AttemptResponse {
   id: string;
   questionId: string;
+  type?: "CODING" | "THEORY" | "MCQ" | null;
+  answer?: string | null;
   language: string | null;
   status: string;
   result: string | null;
   score: number | null;
+  passedTestCases?: number | null;
+  totalTestCases?: number | null;
+  executionTime?: number | null;
+  memoryUsed?: number | null;
   compilerOutput: string | null;
   runtimeOutput: string | null;
   failedTestCase: TestCaseResult | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AttemptPage {
+  content: AttemptResponse[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
 }

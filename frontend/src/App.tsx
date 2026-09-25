@@ -9,6 +9,8 @@ import { QuestionDetailsPage } from "./pages/QuestionDetailsPage";
 import { TestCaseManagerPage } from "./pages/TestCaseManagerPage";
 import { AdminRoute } from "./components/AdminRoute";
 import { CodingWorkspacePage } from "./pages/CodingWorkspacePage";
+import { MyAttemptsPage } from "./pages/MyAttemptsPage";
+import { AttemptDetailsPage } from "./pages/AttemptDetailsPage";
 import { useAuth } from "./context/AuthContext";
 
 function HomeRedirect() {
@@ -28,8 +30,10 @@ export function App() {
         <Route path="/questions" element={<QuestionsPage />} />
         <Route path="/questions/:questionId/solve" element={<CodingWorkspacePage />} />
         <Route path="/questions/:questionId" element={<QuestionDetailsPage />} />
-        <Route path="/attempts" element={<PlaceholderPage title="My Attempts" />} />
-        <Route path="/attempts/:attemptId" element={<PlaceholderPage title="Attempt Details" />} />
+        <Route path="/my-attempts" element={<MyAttemptsPage />} />
+        <Route path="/my-attempts/:attemptId" element={<AttemptDetailsPage />} />
+        <Route path="/attempts" element={<MyAttemptsPage />} />
+        <Route path="/attempts/:attemptId" element={<AttemptDetailsPage />} />
         <Route path="/profile" element={<PlaceholderPage title="Profile" />} />
         <Route element={<AdminRoute />}>
           <Route path="/manage-questions" element={<QuestionsPage managementMode />} />
