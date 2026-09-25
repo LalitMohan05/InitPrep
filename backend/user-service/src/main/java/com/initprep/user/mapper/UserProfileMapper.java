@@ -19,6 +19,7 @@ public class UserProfileMapper {
             .graduationYear(request.getGraduationYear())
             .githubUrl(request.getGithubUrl())
             .linkedinUrl(request.getLinkedinUrl())
+            .portfolioUrl(request.getPortfolioUrl())
             .leetcodeUrl(request.getLeetcodeUrl())
             .codeforcesUrl(request.getCodeforcesUrl())
             .codechefUrl(request.getCodechefUrl())
@@ -41,6 +42,7 @@ public class UserProfileMapper {
             .graduationYear(profile.getGraduationYear())
             .githubUrl(profile.getGithubUrl())
             .linkedinUrl(profile.getLinkedinUrl())
+            .portfolioUrl(profile.getPortfolioUrl())
             .leetcodeUrl(profile.getLeetcodeUrl())
             .codeforcesUrl(profile.getCodeforcesUrl())
             .codechefUrl(profile.getCodechefUrl())
@@ -76,6 +78,9 @@ public class UserProfileMapper {
 
         if (request.getLinkedinUrl() != null)
             profile.setLinkedinUrl(request.getLinkedinUrl());
+
+        if (request.getPortfolioUrl() != null)
+            profile.setPortfolioUrl(request.getPortfolioUrl());
 
         if (request.getLeetcodeUrl() != null)
             profile.setLeetcodeUrl(request.getLeetcodeUrl());

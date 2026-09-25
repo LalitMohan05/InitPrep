@@ -39,6 +39,9 @@ public class UpdateProfileRequest {
     @ProfileUrl(platform = Platform.LINKEDIN)
     private String linkedinUrl;
 
+    @URL(message = "Invalid portfolio URL")
+    private String portfolioUrl;
+
     @ProfileUrl(platform = Platform.LEETCODE)
     private String leetcodeUrl;
 

@@ -32,6 +32,8 @@ public class UserProfileResponse {
 
     private String linkedinUrl;
 
+    private String portfolioUrl;
+
     private String leetcodeUrl;
 
     private String codeforcesUrl;

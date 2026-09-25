@@ -46,6 +46,8 @@ public class UserProfile extends BaseEntity {
 
     private String githubUrl;
     private String linkedinUrl;
+    @Column(length = 2048)
+    private String portfolioUrl;
     private String leetcodeUrl;
     private String codeforcesUrl;
     private String codechefUrl;
