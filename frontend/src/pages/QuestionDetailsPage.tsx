@@ -4,7 +4,16 @@ import * as questionsApi from "../api/questionsApi";
 import { MonacoCodeEditor } from "../components/MonacoCodeEditor";
 import { useAuth } from "../context/AuthContext";
 import type { QuestionDetails, QuestionSummary } from "../types/questions";
+import type { QuestionRole } from "../types/questions";
 import { normalizeQuestionText, questionExamples } from "../utils/questionContent";
+
+const targetRoles: { value: QuestionRole; label: string }[] = [
+  { value: "BACKEND_DEVELOPER", label: "Backend Developer" },
+  { value: "FRONTEND_DEVELOPER", label: "Frontend Developer" },
+  { value: "FULL_STACK_DEVELOPER", label: "Full Stack Developer" },
+  { value: "DEVOPS_ENGINEER", label: "DevOps Engineer" },
+  { value: "MACHINE_LEARNING_ENGINEER", label: "Machine Learning Engineer" },
+];
 
 export function QuestionDetailsPage() {
   const { questionId = "" } = useParams();
@@ -34,6 +43,11 @@ export function QuestionDetailsPage() {
     event.preventDefault();
     if (!question) return;
     const data = new FormData(event.currentTarget);
+    const roles = data.getAll("roles").map(String) as QuestionRole[];
+    if (roles.length === 0) {
+      setError("Select at least one target role.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -45,6 +59,7 @@ export function QuestionDetailsPage() {
         hints: String(data.get("hints") ?? ""),
         starterCode: String(data.get("starterCode") ?? ""),
         expectedComplexity: String(data.get("expectedComplexity") ?? ""),
+        roles,
       });
       setQuestion({
         ...question,
@@ -55,6 +70,7 @@ export function QuestionDetailsPage() {
         hints: String(data.get("hints") ?? ""),
         starterCode: String(data.get("starterCode") ?? ""),
         expectedComplexity: String(data.get("expectedComplexity") ?? ""),
+        roles,
       });
       setStarterCode(String(data.get("starterCode") ?? ""));
       setEditing(false);
@@ -101,6 +117,7 @@ export function QuestionDetailsPage() {
           <MonacoCodeEditor className="starter-code-monaco" ariaLabel="Starter code" value={starterCode} onChange={setStarterCode} language="java" height="340px" />
         </label>
         <label>Expected complexity<textarea name="expectedComplexity" rows={2} defaultValue={normalizeQuestionText(question.expectedComplexity)} /></label>
+        <fieldset className="role-checkboxes"><legend>Target roles</legend>{targetRoles.map(role => <label key={role.value}><input type="checkbox" name="roles" value={role.value} defaultChecked={question.roles?.includes(role.value)} />{role.label}</label>)}</fieldset>
         <button className="primary-button compact-button" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
       </form> : <>
         <div className="question-detail-sections">
@@ -110,6 +127,7 @@ export function QuestionDetailsPage() {
           {question.hints && <section><h2>Hints</h2><pre>{normalizeQuestionText(question.hints)}</pre></section>}
           {question.starterCode && <section><h2>Starter code</h2><pre className="starter-preview">{normalizeQuestionText(question.starterCode, true)}</pre></section>}
           {question.expectedComplexity && <section><h2>Expected complexity</h2><pre>{normalizeQuestionText(question.expectedComplexity)}</pre></section>}
+          {question.roles?.length ? <section><h2>Target roles</h2><p>{question.roles.map(role => targetRoles.find(item => item.value === role)?.label ?? role).join(", ")}</p></section> : null}
         </div>
           {question.type === "CODING" && <div className="preparation-note"><strong>Ready to work on it?</strong><p>Open the coding workspace to write and run a solution.</p><Link className="secondary-button solve-link" to={`/questions/${questionId}/solve`}>Open coding workspace</Link></div>}
       </>}

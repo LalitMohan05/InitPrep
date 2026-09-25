@@ -2,14 +2,17 @@ package com.initprep.interview.seed;
 
 import com.initprep.interview.entity.Company;
 import com.initprep.interview.entity.Question;
+import com.initprep.interview.entity.QuestionRole;
 import com.initprep.interview.entity.TestCase;
 import com.initprep.interview.entity.Topic;
 import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
+import com.initprep.interview.enums.TargetRole;
 import com.initprep.interview.repository.CompanyRepo;
 import com.initprep.interview.repository.QuestionRepo;
-import com.initprep.interview.repository.TestCaseRepo;
+import com.initprep.interview.repository.QuestionRoleRepo;
 import com.initprep.interview.repository.TopicRepo;
+import com.initprep.interview.repository.specification.QuestionSpecification;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,41 +49,53 @@ public class DevelopmentQuestionSeeder implements ApplicationRunner {
         """;
 
     private final QuestionRepo questionRepo;
-    private final TestCaseRepo testCaseRepo;
     private final TopicRepo topicRepo;
     private final CompanyRepo companyRepo;
+    private final QuestionRoleRepo questionRoleRepo;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         List<ProblemSeed> problems = problemSeeds();
         validateSeedData(problems);
+        List<QuestionBankSeedData.BankQuestion> bank = new ArrayList<>();
+        bank.addAll(QuestionBankSeedData.mcq());
+        bank.addAll(QuestionBankSeedData.theory());
+        validateBankSeedData(bank);
 
-        List<Question> oldQuestions = questionRepo.findAll();
-        oldQuestions.forEach(question -> {
-            question.getTopics().clear();
-            question.getCompanies().clear();
-        });
-        questionRepo.saveAll(oldQuestions);
-        questionRepo.flush();
-        testCaseRepo.deleteAllInBatch();
-        questionRepo.deleteAllInBatch();
+        List<Question> questions = questionRepo.findAll();
+        List<Question> additions = new ArrayList<>();
+        Map<TargetRole, QuestionRole> roles = loadRoles();
+        Map<String, Topic> topics = loadTopics(problems, bank);
+        Map<String, Company> companies = loadCompanies(problems, bank);
 
-        Map<String, Topic> topics = loadTopics(problems);
-        Map<String, Company> companies = loadCompanies(problems);
-        List<Question> questions = problems.stream()
-            .map(problem -> toQuestion(problem, topics, companies))
-            .toList();
+        ensureCodingQuestions(problems, questions, additions, topics, companies, roles);
+        questions.addAll(additions);
+        synchronizeBankQuestions(QuestionType.MCQ, QuestionBankSeedData.mcq(), questions, additions, topics, companies, roles);
+        synchronizeBankQuestions(QuestionType.THEORY, QuestionBankSeedData.theory(), questions, additions, topics, companies, roles);
+
+        assignRolesAndTopics(questions, bank, roles, topics);
+        rebalanceDifficulty(questions.stream().filter(question -> question.getType() == QuestionType.MCQ).toList());
+        rebalanceDifficulty(questions.stream().filter(question -> question.getType() == QuestionType.THEORY).toList());
+
         questionRepo.saveAll(questions);
         questionRepo.flush();
-
         verifyPersistedDataset();
-        log.info("Development seed replaced question data with {} coding questions and {} test cases.",
-            questions.size(), questions.size() * CASE_COUNT);
+        log.info("Development seed verified {} questions (30 coding, 100 MCQ, 100 theory).", questions.size());
     }
 
-    private Map<String, Topic> loadTopics(List<ProblemSeed> problems) {
-        Set<String> names = problems.stream().flatMap(p -> p.topics().stream()).collect(Collectors.toSet());
+    private Map<TargetRole, QuestionRole> loadRoles() {
+        Map<TargetRole, QuestionRole> result = questionRoleRepo.findAll().stream()
+            .collect(Collectors.toMap(QuestionRole::getCode, Function.identity()));
+        List<QuestionRole> missing = Arrays.stream(TargetRole.values()).filter(code -> !result.containsKey(code))
+            .map(code -> QuestionRole.builder().code(code).build()).toList();
+        questionRoleRepo.saveAll(missing).forEach(role -> result.put(role.getCode(), role));
+        return result;
+    }
+
+    private Map<String, Topic> loadTopics(List<ProblemSeed> problems, List<QuestionBankSeedData.BankQuestion> bank) {
+        Set<String> names = new HashSet<>(problems.stream().flatMap(p -> p.topics().stream()).toList());
+        bank.stream().flatMap(question -> question.topics().stream()).forEach(names::add);
         Map<String, Topic> result = topicRepo.findAll().stream()
             .filter(topic -> names.contains(topic.getName()))
             .collect(Collectors.toMap(Topic::getName, Function.identity()));
@@ -90,8 +105,9 @@ public class DevelopmentQuestionSeeder implements ApplicationRunner {
         return result;
     }
 
-    private Map<String, Company> loadCompanies(List<ProblemSeed> problems) {
-        Set<String> names = problems.stream().flatMap(p -> p.companies().stream()).collect(Collectors.toSet());
+    private Map<String, Company> loadCompanies(List<ProblemSeed> problems, List<QuestionBankSeedData.BankQuestion> bank) {
+        Set<String> names = new HashSet<>(problems.stream().flatMap(p -> p.companies().stream()).toList());
+        bank.stream().flatMap(question -> question.companies().stream()).forEach(names::add);
         Map<String, Company> result = companyRepo.findAll().stream()
             .filter(company -> names.contains(company.getName()))
             .collect(Collectors.toMap(Company::getName, Function.identity()));
@@ -131,6 +147,259 @@ public class DevelopmentQuestionSeeder implements ApplicationRunner {
         return question;
     }
 
+    private void ensureCodingQuestions(List<ProblemSeed> seeds, List<Question> existing, List<Question> additions,
+                                       Map<String, Topic> topics, Map<String, Company> companies,
+                                       Map<TargetRole, QuestionRole> roles) {
+        List<Question> coding = existing.stream().filter(q -> q.getType() == QuestionType.CODING).toList();
+        if (coding.size() > 30) throw new IllegalStateException("Expected the existing 30 coding questions; found " + coding.size());
+        Set<String> titles = existing.stream().map(Question::getTitle).map(DevelopmentQuestionSeeder::titleKey).collect(Collectors.toSet());
+        for (ProblemSeed seed : seeds) {
+            if (coding.size() + additions.size() >= 30) break;
+            if (titles.add(titleKey(seed.title()))) {
+                Question question = toQuestion(seed, topics, companies);
+                question.setRoles(EnumSet.allOf(TargetRole.class).stream().map(roles::get).collect(Collectors.toSet()));
+                additions.add(question);
+            }
+        }
+        if (coding.size() + additions.size() != 30) throw new IllegalStateException("Could not complete the 30-question coding bank without replacing existing questions");
+    }
+
+    private void synchronizeBankQuestions(QuestionType type, List<QuestionBankSeedData.BankQuestion> bank,
+                                         List<Question> questions, List<Question> additions,
+                                         Map<String, Topic> topics, Map<String, Company> companies,
+                                         Map<TargetRole, QuestionRole> roles) {
+        Set<String> seedTitles = bank.stream().map(seed -> titleKey(seed.title())).collect(Collectors.toSet());
+        List<Question> typed = questions.stream().filter(question -> question.getType() == type).toList();
+        if (typed.size() > 100) throw new IllegalStateException("Question bank already has more than 100 " + type + " questions");
+        List<Question> unmanaged = typed.stream().filter(question -> !seedTitles.contains(titleKey(question.getTitle()))).toList();
+        if (unmanaged.size() > 100) throw new IllegalStateException("More than 100 unseeded " + type + " questions are present");
+        rebalanceDifficulty(unmanaged);
+
+        Set<String> titles = questions.stream().filter(question -> question.getType() != type)
+            .map(Question::getTitle).map(DevelopmentQuestionSeeder::titleKey).collect(Collectors.toSet());
+        unmanaged.stream().map(Question::getTitle).map(DevelopmentQuestionSeeder::titleKey).forEach(titles::add);
+        List<QuestionBankSeedData.BankQuestion> desiredSeeds = new ArrayList<>();
+        for (Difficulty target : List.of(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD)) {
+            long existingCount = unmanaged.stream().filter(question -> question.getDifficulty() == target).count();
+            int missing = difficultyTarget(target) - Math.toIntExact(existingCount);
+            if (missing <= 0) continue;
+            Map<TargetRole, Integer> roleCounts = new EnumMap<>(TargetRole.class);
+            for (TargetRole role : TargetRole.values()) {
+                roleCounts.put(role, Math.toIntExact(unmanaged.stream().filter(question -> question.getDifficulty() == target &&
+                    question.getRoles().stream().anyMatch(existingRole -> existingRole.getCode() == role)).count()));
+            }
+            List<QuestionBankSeedData.BankQuestion> available = bank.stream()
+                .filter(seed -> seed.type() == type && seed.difficulty() == target && !titles.contains(titleKey(seed.title())))
+                .collect(Collectors.toCollection(ArrayList::new));
+            if (available.size() < missing) {
+                bank.stream().filter(seed -> seed.type() == type && seed.difficulty() != target && !titles.contains(titleKey(seed.title())))
+                    .forEach(available::add);
+            }
+            for (int index = 0; index < missing; index++) {
+                if (available.isEmpty()) throw new IllegalStateException("Not enough unique seed questions for " + type + " " + target);
+                QuestionBankSeedData.BankQuestion selected = selectForRoleCoverage(available, roleCounts, type);
+                desiredSeeds.add(withDifficulty(selected, target));
+                titles.add(titleKey(selected.title()));
+                selected.roles().forEach(role -> roleCounts.merge(role, 1, Integer::sum));
+                available.remove(selected);
+            }
+        }
+
+        List<Question> managed = typed.stream().filter(question -> seedTitles.contains(titleKey(question.getTitle())))
+            .collect(Collectors.toCollection(ArrayList::new));
+        Map<String, Question> existingByTitle = managed.stream()
+            .collect(Collectors.toMap(question -> titleKey(question.getTitle()), Function.identity()));
+        List<Question> reusable = managed.stream().filter(question -> desiredSeeds.stream()
+            .noneMatch(seed -> titleKey(seed.title()).equals(titleKey(question.getTitle())))).collect(Collectors.toCollection(ArrayList::new));
+
+        for (QuestionBankSeedData.BankQuestion seed : desiredSeeds) {
+            Question question = existingByTitle.get(titleKey(seed.title()));
+            if (question == null && !reusable.isEmpty()) question = reusable.remove(0);
+            if (question == null) {
+                question = new Question();
+                questions.add(question);
+                additions.add(question);
+            }
+            applyBankSeed(question, seed, topics, companies, roles);
+        }
+        if (!reusable.isEmpty()) throw new IllegalStateException("Seed reconciliation would require deleting " + type + " questions");
+    }
+
+    private static QuestionBankSeedData.BankQuestion selectForRoleCoverage(
+        List<QuestionBankSeedData.BankQuestion> candidates, Map<TargetRole, Integer> roleCounts, QuestionType type) {
+        int minimum = type == QuestionType.MCQ ? 4 : 5;
+        return candidates.stream().max(Comparator
+            .comparingInt((QuestionBankSeedData.BankQuestion seed) -> (int) seed.roles().stream()
+                .filter(role -> roleCounts.getOrDefault(role, 0) < minimum).count())
+            .thenComparingDouble(seed -> seed.roles().stream()
+                .mapToDouble(role -> 1.0 / (1 + roleCounts.getOrDefault(role, 0))).sum()))
+            .orElseThrow();
+    }
+
+    private static QuestionBankSeedData.BankQuestion withDifficulty(QuestionBankSeedData.BankQuestion seed, Difficulty difficulty) {
+        return new QuestionBankSeedData.BankQuestion(seed.title(), seed.type(), difficulty, seed.description(), seed.hints(),
+            seed.options(), seed.correctAnswer(), seed.topics(), seed.companies(), seed.roles());
+    }
+
+    private static void applyBankSeed(Question question, QuestionBankSeedData.BankQuestion seed,
+                                      Map<String, Topic> topics, Map<String, Company> companies,
+                                      Map<TargetRole, QuestionRole> roles) {
+        question.setTitle(seed.title());
+        question.setDescription(seed.description());
+        question.setType(seed.type());
+        question.setDifficulty(seed.difficulty());
+        question.setHints(seed.hints());
+        question.setOptions(seed.options());
+        question.setCorrectAnswer(seed.correctAnswer());
+        question.setTopics(seed.topics().stream().map(topics::get).collect(Collectors.toSet()));
+        question.setCompanies(seed.companies().stream().map(companies::get).collect(Collectors.toSet()));
+        question.setRoles(seed.roles().stream().map(roles::get).collect(Collectors.toSet()));
+    }
+
+    private void rebalanceDifficulty(List<Question> questions) {
+        for (Difficulty source : List.of(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD)) {
+            long excess = questions.stream().filter(question -> question.getDifficulty() == source).count() - difficultyTarget(source);
+            if (excess <= 0) continue;
+            List<Question> movable = questions.stream().filter(question -> question.getDifficulty() == source)
+                .sorted(Comparator.comparing(Question::getTitle)).toList();
+            for (Question question : movable) {
+                if (excess == 0) break;
+                for (Difficulty target : List.of(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD)) {
+                    long count = questions.stream().filter(item -> item.getDifficulty() == target).count();
+                    if (count < difficultyTarget(target)) {
+                        question.setDifficulty(target);
+                        excess--;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private static int difficultyTarget(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> 30;
+            case MEDIUM -> 50;
+            case HARD -> 20;
+        };
+    }
+
+    private void assignRolesAndTopics(List<Question> questions, List<QuestionBankSeedData.BankQuestion> bank,
+                                      Map<TargetRole, QuestionRole> roles, Map<String, Topic> topics) {
+        Map<String, QuestionBankSeedData.BankQuestion> byTitle = bank.stream()
+            .collect(Collectors.toMap(seed -> titleKey(seed.title()), Function.identity(), (left, right) -> left));
+        for (Question question : questions) {
+            QuestionBankSeedData.BankQuestion seed = byTitle.get(titleKey(question.getTitle()));
+            if (seed != null) {
+                question.setRoles(seed.roles().stream().map(roles::get).collect(Collectors.toSet()));
+            } else if (question.getRoles().isEmpty()) {
+                question.setRoles(inferRoles(question, roles));
+            }
+            if (question.getRoles().isEmpty()) throw new IllegalStateException("Question has no target role: " + question.getTitle());
+            if (question.getTopics().isEmpty()) {
+                String topicName = inferTopic(question);
+                Topic topic = topics.computeIfAbsent(topicName, name -> topicRepo.findAll().stream()
+                    .filter(existing -> existing.getName().equalsIgnoreCase(name)).findFirst()
+                    .orElseGet(() -> topicRepo.save(Topic.builder().name(name).build())));
+                question.getTopics().add(topic);
+            }
+        }
+    }
+
+    private static Set<QuestionRole> inferRoles(Question question, Map<TargetRole, QuestionRole> roles) {
+        if (question.getType() == QuestionType.CODING) {
+            return Arrays.stream(TargetRole.values()).map(roles::get).collect(Collectors.toSet());
+        }
+        String text = (question.getTitle() + " " + question.getDescription() + " " +
+            question.getTopics().stream().map(Topic::getName).collect(Collectors.joining(" "))).toLowerCase(Locale.ROOT);
+        EnumSet<TargetRole> matches = EnumSet.noneOf(TargetRole.class);
+        if (containsAny(text, "python", "numpy", "pandas", "machine learning", "model", "regression", "classification", "statistics", "probability", "feature")) matches.add(TargetRole.MACHINE_LEARNING_ENGINEER);
+        if (containsAny(text, "react", "javascript", "typescript", "html", "css", "dom", "browser", "accessibility", "frontend")) {
+            matches.add(TargetRole.FRONTEND_DEVELOPER);
+            matches.add(TargetRole.FULL_STACK_DEVELOPER);
+        }
+        if (containsAny(text, "docker", "kubernetes", "linux", "network", "ci/cd", "deployment", "monitoring", "cloud", "container", "devops", "git")) matches.add(TargetRole.DEVOPS_ENGINEER);
+        if (containsAny(text, "java", "spring", "sql", "database", "dbms", "jpa", "hibernate", "rest", "api", "backend", "transaction", "microservice", "cache", "security", "concurrency")) {
+            matches.add(TargetRole.BACKEND_DEVELOPER);
+            matches.add(TargetRole.FULL_STACK_DEVELOPER);
+        }
+        if (matches.isEmpty()) {
+            matches.add(TargetRole.BACKEND_DEVELOPER);
+            matches.add(TargetRole.FULL_STACK_DEVELOPER);
+        }
+        return matches.stream().map(roles::get).collect(Collectors.toSet());
+    }
+
+    private static boolean containsAny(String text, String... values) {
+        return Arrays.stream(values).anyMatch(text::contains);
+    }
+
+    private static String inferTopic(Question question) {
+        String text = (question.getTitle() + " " + question.getDescription()).toLowerCase(Locale.ROOT);
+        if (containsAny(text, "python", "numpy", "pandas", "machine learning", "model", "regression", "classification", "statistics", "probability")) return "Machine Learning";
+        if (containsAny(text, "react", "javascript", "typescript", "html", "css", "browser", "frontend")) return "Frontend Engineering";
+        if (containsAny(text, "docker", "kubernetes", "linux", "ci/cd", "deployment", "monitoring", "cloud", "devops")) return "DevOps";
+        if (containsAny(text, "sql", "database", "dbms", "index", "transaction")) return "Databases";
+        return "Software Engineering";
+    }
+
+    private void validateBankSeedData(List<QuestionBankSeedData.BankQuestion> bank) {
+        Set<String> titles = new HashSet<>();
+        for (QuestionBankSeedData.BankQuestion seed : bank) {
+            if (!titles.add(titleKey(seed.title()))) throw new IllegalStateException("Duplicate question bank title: " + seed.title());
+            if (seed.roles().isEmpty() || seed.topics().isEmpty() || blank(seed.description()) || !seed.description().contains("\n")) {
+                throw new IllegalStateException("Incomplete role-aware question seed: " + seed.title());
+            }
+            if (seed.type() == QuestionType.MCQ && (!hasFourOptions(seed.options()) || !validMcqAnswer(seed.options(), seed.correctAnswer()))) {
+                throw new IllegalStateException("MCQ must contain four choices and a matching correct answer: " + seed.title());
+            }
+            if (seed.type() == QuestionType.THEORY && (blank(seed.hints()) || !seed.hints().contains("\n"))) {
+                throw new IllegalStateException("Theory seed must include a multiline expected-answer outline: " + seed.title());
+            }
+        }
+        for (QuestionType type : List.of(QuestionType.MCQ, QuestionType.THEORY)) {
+            List<QuestionBankSeedData.BankQuestion> typed = bank.stream().filter(seed -> seed.type() == type).toList();
+            if (typed.stream().filter(seed -> seed.difficulty() == Difficulty.EASY).count() < 30 ||
+                typed.stream().filter(seed -> seed.difficulty() == Difficulty.MEDIUM).count() < 50 ||
+                typed.stream().filter(seed -> seed.difficulty() == Difficulty.HARD).count() < 20) {
+                throw new IllegalStateException("Insufficient seed questions for required difficulty distribution: " + type);
+            }
+        }
+    }
+
+    private void validateRolePools() {
+        for (TargetRole role : TargetRole.values()) {
+            List<Question> roleQuestions = questionRepo.findAll(QuestionSpecification.hasRole(role));
+            if (roleQuestions.isEmpty() || roleQuestions.stream().anyMatch(question ->
+                question.getRoles().stream().noneMatch(questionRole -> questionRole.getCode() == role))) {
+                throw new IllegalStateException("Role filtering returned no matching questions for " + role);
+            }
+            for (Difficulty difficulty : Difficulty.values()) {
+                long coding = roleQuestions.stream().filter(question -> question.getType() == QuestionType.CODING && question.getDifficulty() == difficulty).count();
+                long mcq = roleQuestions.stream().filter(question -> question.getType() == QuestionType.MCQ && question.getDifficulty() == difficulty).count();
+                long theory = roleQuestions.stream().filter(question -> question.getType() == QuestionType.THEORY && question.getDifficulty() == difficulty).count();
+                // The minimum pool supports the fixed 40/30/30 mix for a ten-question interview.
+                if (coding < 4 || mcq < 3 || theory < 3) {
+                    throw new IllegalStateException("Role/difficulty pool is too small for Mock Interview selection: " + role + " " + difficulty + " (" + coding + "/" + theory + "/" + mcq + ")");
+                }
+            }
+        }
+    }
+
+    private static boolean hasFourOptions(String options) {
+        return options != null && options.split("\\R").length == 4;
+    }
+
+    private static boolean validMcqAnswer(String options, String answer) {
+        if (answer == null || options == null) return false;
+        return Arrays.stream(options.split("\\R")).anyMatch(option -> {
+            String normalized = option.trim();
+            return normalized.equalsIgnoreCase(answer.trim()) || normalized.matches("(?i)^" + java.util.regex.Pattern.quote(answer.trim()) + "[.)].*");
+        });
+    }
+
+    private static String titleKey(String title) { return title.trim().toLowerCase(Locale.ROOT); }
+
     private void validateSeedData(List<ProblemSeed> problems) {
         if (problems.size() != 30) throw new IllegalStateException("Seed must contain exactly 30 questions.");
         Map<Difficulty, Long> counts = problems.stream().collect(Collectors.groupingBy(ProblemSeed::difficulty, Collectors.counting()));
@@ -156,26 +425,43 @@ public class DevelopmentQuestionSeeder implements ApplicationRunner {
 
     private void verifyPersistedDataset() {
         List<Question> saved = questionRepo.findAll();
-        if (saved.size() != 30) throw new IllegalStateException("Persisted question count is not 30.");
-        Map<Difficulty, Long> counts = saved.stream().collect(Collectors.groupingBy(Question::getDifficulty, Collectors.counting()));
-        if (counts.getOrDefault(Difficulty.EASY, 0L) != 10 || counts.getOrDefault(Difficulty.MEDIUM, 0L) != 10 || counts.getOrDefault(Difficulty.HARD, 0L) != 10) {
-            throw new IllegalStateException("Persisted difficulty distribution is incorrect.");
+        validateRolePools();
+        if (saved.size() != 230) throw new IllegalStateException("Persisted question count must be 230, found " + saved.size());
+        Map<QuestionType, Long> types = saved.stream().collect(Collectors.groupingBy(Question::getType, Collectors.counting()));
+        if (types.getOrDefault(QuestionType.CODING, 0L) != 30 || types.getOrDefault(QuestionType.MCQ, 0L) != 100 || types.getOrDefault(QuestionType.THEORY, 0L) != 100) {
+            throw new IllegalStateException("Persisted question type distribution must be 30 CODING, 100 MCQ, 100 THEORY");
         }
         Set<String> titles = new HashSet<>();
         for (Question question : saved) {
-            if (question.getType() != QuestionType.CODING || blank(question.getTitle()) || blank(question.getDescription()) || blank(question.getConstraints()) || blank(question.getExamples()) || blank(question.getHints()) || blank(question.getStarterCode()) || blank(question.getExpectedComplexity())) {
+            if (question.getType() == null || question.getDifficulty() == null || blank(question.getTitle()) || blank(question.getDescription())) {
                 throw new IllegalStateException("Persisted question is missing a required field: " + question.getId());
             }
-            if (!titles.add(question.getTitle().toLowerCase(Locale.ROOT))) throw new IllegalStateException("Duplicate persisted question title.");
-            if (!question.getDescription().contains("\n") || !question.getExamples().contains("\n") || !question.getStarterCode().contains("\n")) {
+            if (!titles.add(titleKey(question.getTitle()))) throw new IllegalStateException("Duplicate persisted question title: " + question.getTitle());
+            if (question.getRoles().isEmpty()) throw new IllegalStateException("Question has no target role: " + question.getTitle());
+            if (question.getType() != QuestionType.CODING && question.getTopics().isEmpty()) throw new IllegalStateException("Non-coding question has no topic: " + question.getTitle());
+            if (question.getType() != QuestionType.CODING && (!question.getDescription().contains("\n") || question.getDescription().contains("\\n"))) {
                 throw new IllegalStateException("Persisted multiline content was not preserved: " + question.getTitle());
             }
-            if (question.getTopics().isEmpty() || question.getCompanies().isEmpty()) throw new IllegalStateException("Invalid relation on " + question.getTitle());
-            List<TestCase> cases = testCaseRepo.findAllById(question.getTestCases().stream().map(TestCase::getId).toList());
-            long visible = cases.stream().filter(testCase -> !testCase.isHidden()).count();
-            long hidden = cases.stream().filter(TestCase::isHidden).count();
-            if (cases.size() != CASE_COUNT || visible != 3 || hidden != 27 || cases.stream().anyMatch(testCase -> blank(testCase.getInput()) || blank(testCase.getExpectedOutput()) || testCase.getQuestion() == null || !testCase.getQuestion().getId().equals(question.getId()))) {
-                throw new IllegalStateException("Invalid test-case data for " + question.getTitle());
+            if (question.getType() == QuestionType.MCQ && (!hasFourOptions(question.getOptions()) || !validMcqAnswer(question.getOptions(), question.getCorrectAnswer()))) {
+                throw new IllegalStateException("Invalid MCQ options or correct answer: " + question.getTitle());
+            }
+            if (question.getType() == QuestionType.THEORY && (blank(question.getHints()) || !question.getHints().contains("\n"))) {
+                throw new IllegalStateException("Theory question is missing expected-answer content: " + question.getTitle());
+            }
+            if (question.getType() == QuestionType.CODING) {
+                List<TestCase> cases = question.getTestCases();
+                long visible = cases.stream().filter(testCase -> !testCase.isHidden()).count();
+                long hidden = cases.stream().filter(TestCase::isHidden).count();
+                if (cases.size() != CASE_COUNT || visible != 3 || hidden != 27 || cases.stream().anyMatch(testCase -> blank(testCase.getInput()) || blank(testCase.getExpectedOutput()))) {
+                    throw new IllegalStateException("Existing coding test cases changed or are invalid: " + question.getTitle());
+                }
+            }
+        }
+        for (QuestionType type : List.of(QuestionType.MCQ, QuestionType.THEORY)) {
+            Map<Difficulty, Long> counts = saved.stream().filter(question -> question.getType() == type)
+                .collect(Collectors.groupingBy(Question::getDifficulty, Collectors.counting()));
+            if (counts.getOrDefault(Difficulty.EASY, 0L) != 30 || counts.getOrDefault(Difficulty.MEDIUM, 0L) != 50 || counts.getOrDefault(Difficulty.HARD, 0L) != 20) {
+                throw new IllegalStateException("Incorrect difficulty distribution for " + type);
             }
         }
     }

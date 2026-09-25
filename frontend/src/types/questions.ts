@@ -1,5 +1,6 @@
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 export type QuestionType = "CODING" | "THEORY" | "MCQ";
+export type QuestionRole = "BACKEND_DEVELOPER" | "FRONTEND_DEVELOPER" | "FULL_STACK_DEVELOPER" | "DEVOPS_ENGINEER" | "MACHINE_LEARNING_ENGINEER";
 
 export interface CompanySummary {
   id: string;
@@ -18,6 +19,7 @@ export interface QuestionSummary {
   difficulty: Difficulty;
   companies: CompanySummary[];
   topics: TopicSummary[];
+  roles?: QuestionRole[];
 }
 
 export interface QuestionDetails {
@@ -31,6 +33,8 @@ export interface QuestionDetails {
   hints?: string | null;
   starterCode?: string | null;
   expectedComplexity?: string | null;
+  options?: string | null;
+  roles?: QuestionRole[];
 }
 
 export interface QuestionPage {
@@ -57,6 +61,7 @@ export interface QuestionWriteRequest {
   correctAnswer?: string;
   companyIds?: string[];
   topicIds?: string[];
+  roles: QuestionRole[];
 }
 
 export interface TestCase {

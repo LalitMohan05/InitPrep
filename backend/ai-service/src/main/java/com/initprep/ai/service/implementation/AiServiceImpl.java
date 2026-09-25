@@ -2,6 +2,8 @@ package com.initprep.ai.service.implementation;
 
 import com.initprep.ai.dto.CodingFeedbackRequest;
 import com.initprep.ai.dto.CodingFeedbackResponse;
+import com.initprep.ai.dto.TheoryEvaluationRequest;
+import com.initprep.ai.dto.TheoryEvaluationResponse;
 import com.initprep.ai.service.interfaces.AiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -124,5 +126,46 @@ public class AiServiceImpl implements AiService {
             .call()
             .entity(CodingFeedbackResponse.class);
 
+    }
+
+    @Override
+    public TheoryEvaluationResponse evaluateTheoryAnswer(TheoryEvaluationRequest request) {
+        String prompt = """
+            You are an experienced technical interviewer. Evaluate the candidate's response to the interview question.
+
+            Target role: %s
+            Difficulty: %s
+            Relevant topics: %s
+            Question: %s
+            Expected answer or evaluation outline: %s
+            Candidate response: %s
+
+            Compare the response with the expected answer or evaluation outline when one is provided. If it is absent, assess only the question and supplied topics; do not invent a canonical answer.
+            Return a fair score from 0 to 100 based only on correctness, completeness, clarity, and relevant reasoning.
+            Provide concise strengths, weaknesses, actionable feedback, and a short list of recommended topics to study.
+            Do not assume information absent from the candidate's response. Do not invent experience or facts.
+            Return the result in the requested structured response format.
+            """.formatted(
+                valueOrNotProvided(request.getTargetRole()),
+                valueOrNotProvided(request.getDifficulty()),
+                request.getTopics() == null || request.getTopics().isEmpty() ? "Not provided" : String.join(", ", request.getTopics()),
+                request.getQuestion(),
+                valueOrNotProvided(request.getExpectedAnswer()),
+                request.getAnswer()
+            );
+
+        TheoryEvaluationResponse response = chatClient.prompt()
+            .user(prompt)
+            .call()
+            .entity(TheoryEvaluationResponse.class);
+        if (response == null || response.getScore() == null) {
+            throw new IllegalStateException("AI returned no theory evaluation score");
+        }
+        response.setScore(Math.max(0, Math.min(100, response.getScore())));
+        return response;
+    }
+
+    private static String valueOrNotProvided(String value) {
+        return value == null || value.isBlank() ? "Not provided" : value;
     }
 }

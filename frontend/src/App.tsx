@@ -12,6 +12,8 @@ import { CodingWorkspacePage } from "./pages/CodingWorkspacePage";
 import { MyAttemptsPage } from "./pages/MyAttemptsPage";
 import { AttemptDetailsPage } from "./pages/AttemptDetailsPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { MockInterviewStartPage } from "./pages/MockInterviewStartPage";
+import { MockInterviewSessionPage } from "./pages/MockInterviewSessionPage";
 import { useAuth } from "./context/AuthContext";
 
 function HomeRedirect() {
@@ -36,6 +38,8 @@ export function App() {
         <Route path="/attempts" element={<MyAttemptsPage />} />
         <Route path="/attempts/:attemptId" element={<AttemptDetailsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/mock-interview" element={<MockInterviewStartPage />} />
+        <Route path="/mock-interview/:sessionId" element={<MockInterviewSessionPage />} />
         <Route element={<AdminRoute />}>
           <Route path="/manage-questions" element={<QuestionsPage managementMode />} />
           <Route path="/manage-test-cases" element={<TestCaseManagerPage />} />

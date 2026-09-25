@@ -2,7 +2,9 @@ package com.initprep.interview.dto;
 
 import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
+import com.initprep.interview.enums.TargetRole;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
 
 import java.util.List;
@@ -40,4 +42,7 @@ public class UpdateQuestionRequest {
     private Set<UUID> companyIds;
 
     private Set<UUID> topicIds;
+
+    @NotEmpty
+    private Set<TargetRole> roles;
 }

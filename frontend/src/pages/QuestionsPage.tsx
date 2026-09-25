@@ -4,6 +4,15 @@ import * as questionsApi from "../api/questionsApi";
 import { useAuth } from "../context/AuthContext";
 import { QuestionForm } from "../components/QuestionForm";
 import type { QuestionPage } from "../types/questions";
+import type { QuestionRole } from "../types/questions";
+
+const targetRoles: { value: QuestionRole; label: string }[] = [
+  { value: "BACKEND_DEVELOPER", label: "Backend Developer" },
+  { value: "FRONTEND_DEVELOPER", label: "Frontend Developer" },
+  { value: "FULL_STACK_DEVELOPER", label: "Full Stack Developer" },
+  { value: "DEVOPS_ENGINEER", label: "DevOps Engineer" },
+  { value: "MACHINE_LEARNING_ENGINEER", label: "Machine Learning Engineer" },
+];
 
 interface Props { managementMode?: boolean; }
 
@@ -11,7 +20,7 @@ export function QuestionsPage({ managementMode = false }: Props) {
   const { user } = useAuth();
   const admin = user?.role === "ADMIN";
   const navigate = useNavigate();
-  const [filters, setFilters] = useState({ difficulty: "", type: "", company: "", topic: "" });
+  const [filters, setFilters] = useState({ difficulty: "", type: "", company: "", topic: "", role: "" });
   const [pageNumber, setPageNumber] = useState(0);
   const [result, setResult] = useState<QuestionPage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,6 +73,7 @@ export function QuestionsPage({ managementMode = false }: Props) {
       <label>Type<select value={filters.type} onChange={event => changeFilter("type", event.target.value)}><option value="">All types</option><option>CODING</option><option>THEORY</option><option>MCQ</option></select></label>
       <label>Company<input value={filters.company} onChange={event => changeFilter("company", event.target.value)} placeholder="Company name" /></label>
       <label>Topic<input value={filters.topic} onChange={event => changeFilter("topic", event.target.value)} placeholder="Topic name" /></label>
+      <label>Target role<select value={filters.role} onChange={event => changeFilter("role", event.target.value)}><option value="">All roles</option>{targetRoles.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
     </div>
 
     {loading ? <p className="page-state">Loading questions…</p> : error ? <div className="notice-panel error-panel" role="alert">{error}</div> : !result?.content.length ? <div className="empty-state"><h2>No questions found</h2><p>Try changing or clearing the filters.</p></div> : <>
@@ -74,6 +84,7 @@ export function QuestionsPage({ managementMode = false }: Props) {
             <div className="question-meta"><span className={`difficulty difficulty-${question.difficulty.toLowerCase()}`}>{question.difficulty}</span><span>{question.type}</span></div>
             {question.companies?.length > 0 && <p className="tag-line">Companies: {question.companies.map(item => item.name).join(", ")}</p>}
             {question.topics?.length > 0 && <p className="tag-line">Topics: {question.topics.map(item => item.name).join(", ")}</p>}
+            {question.roles?.length ? <p className="tag-line">Roles: {question.roles.map(role => targetRoles.find(item => item.value === role)?.label ?? role).join(", ")}</p> : null}
           </div>
           {admin && <div className="row-actions"><button className="text-button" onClick={() => navigate(`/questions/${question.id}`, { state: { question } })}>Edit</button><Link className="text-button" to={`/questions/${question.id}/test-cases`}>Test cases</Link><button className="text-button danger-text" onClick={() => void removeQuestion(question.id, question.title)}>Delete</button></div>}
         </article>)}

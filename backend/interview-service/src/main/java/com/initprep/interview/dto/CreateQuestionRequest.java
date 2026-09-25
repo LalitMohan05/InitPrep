@@ -2,9 +2,11 @@ package com.initprep.interview.dto;
 
 import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
+import com.initprep.interview.enums.TargetRole;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
 
 import java.util.List;
@@ -49,5 +51,8 @@ public class CreateQuestionRequest {
     private Set<UUID> companyIds;
 
     private Set<UUID> topicIds;
+
+    @NotEmpty
+    private Set<TargetRole> roles;
     private List<TestCaseRequest> testCases;
 }

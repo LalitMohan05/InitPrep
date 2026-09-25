@@ -2,7 +2,10 @@ package com.initprep.interview.dto;
 
 import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
+import com.initprep.interview.enums.TargetRole;
 import lombok.*;
+
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -22,4 +25,7 @@ public class QuestionDetailsResponse {
     private String hints;
     private String starterCode;
     private String expectedComplexity;
+    private String options;
+    private Set<TargetRole> roles;
+    private Set<String> topics;
 }

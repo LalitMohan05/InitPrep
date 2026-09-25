@@ -40,7 +40,7 @@ public class AttemptController {
             .body(response);
     }
 
-    @GetMapping("/{attemptId}")
+    @GetMapping("/{attemptId:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}}")
     public ResponseEntity<AttemptResponse> getAttempt(
         Authentication authentication,
         @PathVariable UUID attemptId
@@ -81,7 +81,7 @@ public class AttemptController {
         );
     }
 
-    @GetMapping("/{attemptId}/ai-feedback")
+    @GetMapping("/{attemptId:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}}/ai-feedback")
     public ResponseEntity<CodingFeedbackResponse> getAiFeedback(
         Authentication authentication,
         @PathVariable UUID attemptId

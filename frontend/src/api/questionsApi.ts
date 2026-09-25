@@ -12,6 +12,7 @@ export interface QuestionFilters {
   type?: string;
   company?: string;
   topic?: string;
+  role?: string;
   page: number;
   size: number;
 }

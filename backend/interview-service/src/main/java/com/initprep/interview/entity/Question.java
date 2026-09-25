@@ -72,6 +72,16 @@ public class Question {
     )
     Set<Topic> topics = new HashSet<>();
 
+    @Builder.Default
+    @ManyToMany
+    @JoinTable(
+        name = "question_target_roles",
+        joinColumns = @JoinColumn(name = "question_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id"),
+        uniqueConstraints = @UniqueConstraint(columnNames = {"question_id", "role_id"})
+    )
+    Set<QuestionRole> roles = new HashSet<>();
+
     @OneToMany(
         mappedBy = "question",
         cascade = CascadeType.ALL,

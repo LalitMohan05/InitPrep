@@ -2,6 +2,15 @@ import { FormEvent, useState } from "react";
 import { createQuestion } from "../api/questionsApi";
 import { MonacoCodeEditor } from "./MonacoCodeEditor";
 import type { Difficulty, QuestionType } from "../types/questions";
+import type { QuestionRole } from "../types/questions";
+
+const roles: { value: QuestionRole; label: string }[] = [
+  { value: "BACKEND_DEVELOPER", label: "Backend Developer" },
+  { value: "FRONTEND_DEVELOPER", label: "Frontend Developer" },
+  { value: "FULL_STACK_DEVELOPER", label: "Full Stack Developer" },
+  { value: "DEVOPS_ENGINEER", label: "DevOps Engineer" },
+  { value: "MACHINE_LEARNING_ENGINEER", label: "Machine Learning Engineer" },
+];
 
 interface Props { onCreated(): void; }
 
@@ -17,6 +26,12 @@ export function QuestionForm({ onCreated }: Props) {
     setError("");
     const form = new FormData(formElement);
     const ids = (name: string) => String(form.get(name) ?? "").split(",").map(value => value.trim()).filter(Boolean);
+    const selectedRoles = form.getAll("roles").map(String) as QuestionRole[];
+    if (selectedRoles.length === 0) {
+      setError("Select at least one target role.");
+      setBusy(false);
+      return;
+    }
     const optional = (name: string) => {
       const value = String(form.get(name) ?? "");
       return value.trim() ? value : undefined;
@@ -36,6 +51,7 @@ export function QuestionForm({ onCreated }: Props) {
         correctAnswer: optional("correctAnswer"),
         companyIds: ids("companyIds"),
         topicIds: ids("topicIds"),
+        roles: selectedRoles,
       });
       formElement.reset();
       setStarterCode("");
@@ -69,6 +85,7 @@ export function QuestionForm({ onCreated }: Props) {
       <label>Correct answer<input name="correctAnswer" /></label>
       <label>Company IDs <span className="field-hint">Optional; enter UUIDs separated by commas.</span><input name="companyIds" /></label>
       <label>Topic IDs <span className="field-hint">Optional; enter UUIDs separated by commas.</span><input name="topicIds" /></label>
+      <fieldset className="role-checkboxes"><legend>Target roles</legend>{roles.map(role => <label key={role.value}><input type="checkbox" name="roles" value={role.value} />{role.label}</label>)}</fieldset>
       {error && <p className="error-message" role="alert">{error}</p>}
       <button className="primary-button compact-button" disabled={busy}>{busy ? "Creating…" : "Create question"}</button>
     </form>

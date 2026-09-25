@@ -2,6 +2,7 @@ package com.initprep.attempt.dto;
 
 import lombok.*;
 import java.util.UUID;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -20,4 +21,7 @@ public class QuestionDetailsResponse {
     private String hints;
     private String starterCode;
     private String expectedComplexity;
+    private String options;
+    private Set<String> roles;
+    private Set<String> topics;
 }

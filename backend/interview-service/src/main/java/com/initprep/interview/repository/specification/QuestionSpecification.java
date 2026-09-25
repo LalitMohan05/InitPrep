@@ -2,9 +2,11 @@ package com.initprep.interview.repository.specification;
 
 import com.initprep.interview.entity.Company;
 import com.initprep.interview.entity.Question;
+import com.initprep.interview.entity.QuestionRole;
 import com.initprep.interview.entity.Topic;
 import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
+import com.initprep.interview.enums.TargetRole;
 import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -57,6 +59,14 @@ public class QuestionSpecification {
                 criteriaBuilder.lower(topic.get("name")),
                 topicName.toLowerCase()
             );
+        };
+    }
+
+    public static Specification<Question> hasRole(TargetRole role) {
+        return (root, query, criteriaBuilder) -> {
+            query.distinct(true);
+            Join<Question, QuestionRole> questionRole = root.join("roles");
+            return criteriaBuilder.equal(questionRole.get("code"), role);
         };
     }
 }

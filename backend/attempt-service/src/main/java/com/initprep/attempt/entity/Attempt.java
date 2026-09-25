@@ -66,6 +66,9 @@ public class Attempt {
     @Column(nullable = false)
     private AttemptType type;
 
+    @Column(name = "mock_interview_session_id")
+    private UUID mockInterviewId;
+
     @OneToOne(
         mappedBy = "attempt",
         cascade = CascadeType.ALL,

@@ -2,6 +2,8 @@ package com.initprep.ai.controller;
 
 import com.initprep.ai.dto.CodingFeedbackRequest;
 import com.initprep.ai.dto.CodingFeedbackResponse;
+import com.initprep.ai.dto.TheoryEvaluationRequest;
+import com.initprep.ai.dto.TheoryEvaluationResponse;
 import com.initprep.ai.service.interfaces.AiService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,13 @@ public class AiController {
         return ResponseEntity.ok(
             aiService.generateCodingFeedback(request)
         );
+    }
+
+    @PostMapping("/theory-feedback")
+    public ResponseEntity<TheoryEvaluationResponse> evaluateTheoryAnswer(
+        @Valid @RequestBody TheoryEvaluationRequest request
+    ) {
+        return ResponseEntity.ok(aiService.evaluateTheoryAnswer(request));
     }
 
     @GetMapping("/env-test")

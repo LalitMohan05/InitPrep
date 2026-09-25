@@ -2,6 +2,7 @@ package com.initprep.interview.dto;
 
 import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
+import com.initprep.interview.enums.TargetRole;
 import lombok.*;
 
 import java.util.Set;
@@ -21,4 +22,5 @@ public class QuestionSummaryResponse {
 
     private Set<CompanySummaryResponse> companies;
     private Set<TopicSummaryResponse> topics;
+    private Set<TargetRole> roles;
 }

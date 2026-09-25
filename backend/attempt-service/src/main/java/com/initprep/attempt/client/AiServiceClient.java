@@ -2,6 +2,8 @@ package com.initprep.attempt.client;
 
 import com.initprep.attempt.dto.CodingFeedbackRequest;
 import com.initprep.attempt.dto.CodingFeedbackResponse;
+import com.initprep.attempt.dto.TheoryEvaluationRequest;
+import com.initprep.attempt.dto.TheoryEvaluationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -35,6 +37,18 @@ public class AiServiceClient {
                 "Failed to communicate with AI Service",
                 e
             );
+        }
+    }
+
+    public TheoryEvaluationResponse evaluateTheory(TheoryEvaluationRequest request) {
+        try {
+            return restClient.post()
+                .uri(aiServiceUrl + "/api/ai/theory-feedback")
+                .body(request)
+                .retrieve()
+                .body(TheoryEvaluationResponse.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to evaluate theory interview answer", e);
         }
     }
 }

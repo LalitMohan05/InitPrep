@@ -3,6 +3,7 @@ package com.initprep.interview.controller;
 import com.initprep.interview.dto.*;
 import com.initprep.interview.enums.Difficulty;
 import com.initprep.interview.enums.QuestionType;
+import com.initprep.interview.enums.TargetRole;
 import com.initprep.interview.service.interfaces.QuestionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,12 +50,13 @@ public class QuestionController {
     @GetMapping
     public ResponseEntity<Page<QuestionSummaryResponse>> getAllQuestions(
         @RequestParam(required = false) Difficulty difficulty,
-        @RequestParam(required = false)QuestionType type,
-        @RequestParam(required = false) String company,
-        @RequestParam(required = false) String topic,
-        @PageableDefault(size = 10 , sort = "title")
-        Pageable pageable) {
-        return ResponseEntity.ok(questionService.getQuestions(difficulty,type,company,topic,pageable));
+            @RequestParam(required = false)QuestionType type,
+            @RequestParam(required = false) String company,
+            @RequestParam(required = false) String topic,
+            @RequestParam(required = false) TargetRole role,
+            @PageableDefault(size = 10 , sort = "title")
+            Pageable pageable) {
+        return ResponseEntity.ok(questionService.getQuestions(difficulty,type,company,topic,role,pageable));
     }
 
     @GetMapping("/{questionId}/exists")
@@ -89,5 +91,15 @@ public class QuestionController {
         return ResponseEntity.ok(
             questionService.getQuestionDetails(questionId)
         );
+    }
+
+    @PostMapping("/{questionId}/check-answer")
+    public ResponseEntity<McqAnswerResponse> checkMcqAnswer(
+        @PathVariable UUID questionId,
+        @Valid @RequestBody McqAnswerRequest request
+    ) {
+        return ResponseEntity.ok(new McqAnswerResponse(
+            questionService.checkMcqAnswer(questionId, request.getAnswer())
+        ));
     }
 }
